@@ -1,6 +1,7 @@
 package com.inhealion.generator.activity;
 
 import android.os.Bundle;
+import android.os.Environment;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,12 +16,21 @@ import org.jetbrains.annotations.NotNull;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
+
+    String zipFilename = Environment.getExternalStorageDirectory() + "/unzipped/files.zip";
+    String unzipLocation = Environment.getExternalStorageDirectory() + "/unzipped";
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         GeneratorApiClient client = GeneratorApiClient.instance();
+        Decompress d = new Decompress(zipFilename, unzipLocation);
+        d.unzip();
 
         client.signIn("admin", "admin", new ApiCallback<User>() {
             @Override
