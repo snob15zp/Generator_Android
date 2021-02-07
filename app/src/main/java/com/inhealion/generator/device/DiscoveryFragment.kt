@@ -32,7 +32,7 @@ class DiscoveryFragment : BaseFragment() {
         binding.devicesRecyclerView.adapter = adapter
 
         viewModel.devices.observe(viewLifecycleOwner) { list ->
-            adapter.submitList(list.map { DeviceUiModel(it.name, it.address) })
+            adapter.submitList(list.map { DeviceUiModel(it.name ?: "<Unknown>", it.address) })
         }
 
         viewModel.inProgress.observe(viewLifecycleOwner) {

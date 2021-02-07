@@ -6,60 +6,45 @@ import android.bluetooth.BluetoothDevice.BOND_BONDED
 import android.bluetooth.BluetoothSocket
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.inhealion.generator.device.model.BleDevice
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.io.IOException
-import java.io.OutputStream
 import java.util.*
 
 
 class DiscoveryViewModel(
-    private val scanner: Scanner
+    private val scanner: BleDeviceScanner
 ) : ViewModel() {
 
     val inProgress = MutableLiveData(false)
-    val devices = MutableLiveData<List<BluetoothDevice>>()
+    val devices = MutableLiveData<List<BleDevice>>()
 
     fun start() {
-        val list = mutableListOf<BluetoothDevice>()
+        val list = mutableListOf<BleDevice>()
         viewModelScope.launch {
             inProgress.postValue(true)
-            scanner.scan().collect {
-                when (it) {
-                    is BluetoothDiscoveryAction.Found -> {
-                        if (!list.contains(it.device)) {
-                            devices.postValue(list.apply { add(it.device) })
-                        }
-                    }
-                    else -> Unit
+
+            scanner.scan()
+                .collect {
+                    if (!list.contains(it)) list.add(it)
+                    devices.postValue(list)
                 }
-            }
             inProgress.postValue(false)
         }
     }
 
     fun sendData(address: String) {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        val device = bluetoothAdapter.getRemoteDevice(address)
-        if(device.bondState != BOND_BONDED) {
-            return
-        }
-
-        var socket: BluetoothSocket? = null
-        try {
-            socket = device.createInsecureRfcommSocketToServiceRecord(SERIAL_UUID)
-            socket.connect()
-            socket.outputStream.write(byteArrayOf(1, 2, 3))
-        } catch (e: Exception) {
-            Timber.e(e, "Unable to send data")
-        }
-
+        scanner.connect(address)
     }
 
     companion object {
-        private val SERIAL_UUID = UUID.fromString("00001801-0000-1000-8000-00805F9B34FB")
+        //private val SERIAL_UUID = UUID.fromString("00001800-0000-1000-8000-00805F9B34FB")
         //private val SERIAL_UUID = UUID.fromString("49535343-fe7d-4ae5-8fa9-9fafd205e455")
+        private val SERIAL_UUID = UUID.fromString("49535343-1E4D-4BD9-BA61-23C647249616")
     }
 }
