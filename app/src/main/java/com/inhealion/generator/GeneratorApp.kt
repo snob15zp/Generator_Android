@@ -3,6 +3,7 @@ package com.inhealion.generator
 import android.app.Application
 import com.inhealion.generator.di.appModule
 import com.inhealion.generator.di.serviceModule
+import com.inhealion.generator.di.viewModelModule
 import com.inhealion.generator.extension.initGeneratorApiClient
 import com.inhealion.generator.extension.initLogger
 import org.koin.android.ext.koin.androidContext
@@ -18,7 +19,8 @@ class GeneratorApp : Application() {
             androidContext(this@GeneratorApp)
             modules(
                 appModule,
-                serviceModule
+                serviceModule,
+                viewModelModule
             )
         }
 

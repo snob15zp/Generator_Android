@@ -15,18 +15,5 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        val scanner = BluetoothScannerImpl(this)
-
-        lifecycleScope.launchWhenStarted {
-            scanner.scan().collect {
-                Timber.d("TTT > $it")
-            }
-        }
-
-        lifecycleScope.launchWhenStarted {
-           delay(2000)
-
-        }
     }
 }

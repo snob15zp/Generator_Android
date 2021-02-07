@@ -26,7 +26,6 @@ class BluetoothScannerImpl(private val context: Context) : Scanner {
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
 
-
         val broadcastReceiver = BluetoothBroadcastReceiver(this)
         context.registerReceiver(broadcastReceiver, filter)
         adapter.startDiscovery()
