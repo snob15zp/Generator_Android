@@ -27,37 +27,10 @@ import timber.log.Timber
 import java.io.InputStream
 import java.util.*
 
-class GeneratorApiClientImpl(
+internal class GeneratorApiClientImpl(
     baseUrl: String,
     private val accountStore: AccountStore
-) : GeneratorApiClient {
-
-    private val service: GeneratorService
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .add(Date::class.java, Rfc3339DateJsonAdapter().nullSafe())
-        .build()
-
-    init {
-        val logging = HttpLoggingInterceptor()
-        if (BuildConfig.DEBUG) {
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY)
-        } else {
-            logging.setLevel(HttpLoggingInterceptor.Level.NONE)
-        }
-
-        val client = OkHttpClient.Builder()
-            .addInterceptor(AuthHeaderInterceptor())
-            .addInterceptor(logging)
-            .build()
-
-        service = Retrofit.Builder()
-            .client(client)
-            .baseUrl(baseUrl)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
-            .create(GeneratorService::class.java)
-    }
+) : BaseGeneratorApiClient(baseUrl, accountStore), GeneratorApiClient {
 
     override fun signIn(login: String, password: String, callback: ApiCallback<User>) = sendRequest(callback) {
         service.login(login, password)?.also {
@@ -86,36 +59,8 @@ class GeneratorApiClientImpl(
             try {
                 request()?.let { callback.success(it) } ?: callback.failure(ApiError.NotFound)
             } catch (e: Exception) {
-                Timber.d(e, "Could not to send request")
-                val error = when (e) {
-                    is HttpException -> e.response()?.errorBody()?.string()?.let {
-                        val errorResponse = moshi.adapter(ErrorResponse::class.java).fromJson(it)
-                        ApiError.ServerError(
-                            errorResponse?.errors?.status,
-                            errorResponse?.errors?.message
-                        )
-                    } ?: ApiError.Unknown
-                    else -> ApiError.Unknown
-                }
-                callback.failure(error)
+                callback.failure(handleError(e))
             }
         }
-    }
-
-    inner class AuthHeaderInterceptor : Interceptor {
-        override fun intercept(chain: Interceptor.Chain): Response {
-            var request = chain.request()
-            val builder = request.newBuilder()
-                .addHeader("Content-Type", "application/json")
-                .addHeader("Accept", "application/json")
-
-            accountStore.load()?.let {
-                builder.addHeader("Authorization", "Bearer ${it.token}")
-            }
-
-            request = builder.build()
-            return chain.proceed(request)
-        }
-
     }
 }

@@ -1,19 +1,12 @@
 package com.inhealion.generator.device
 
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothDevice.BOND_BONDED
-import android.bluetooth.BluetoothSocket
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.inhealion.generator.device.bluetooth.BleDeviceScanner
 import com.inhealion.generator.device.model.BleDevice
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.util.*
 
 
