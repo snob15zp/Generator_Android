@@ -39,7 +39,9 @@ class DiscoveryViewModel(
     }
 
     fun sendData(address: String) {
-        scanner.connect(address)
+        viewModelScope.launch {
+            scanner.connect(address)
+        }
     }
 
     companion object {

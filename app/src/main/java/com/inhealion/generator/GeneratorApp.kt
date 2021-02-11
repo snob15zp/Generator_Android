@@ -25,6 +25,5 @@ class GeneratorApp : Application() {
         }
 
         initLogger()
-        initGeneratorApiClient()
     }
 }
