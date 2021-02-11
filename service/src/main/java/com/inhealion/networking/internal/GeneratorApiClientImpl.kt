@@ -11,6 +11,7 @@ import com.inhealion.networking.api.model.Program
 import com.inhealion.networking.api.model.User
 import com.inhealion.service.BuildConfig
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -23,6 +24,7 @@ import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.io.InputStream
+import java.util.*
 
 class GeneratorApiClientImpl(
     baseUrl: String,
@@ -32,6 +34,7 @@ class GeneratorApiClientImpl(
     private val service: GeneratorService
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
+        .add(Date::class.java, Rfc3339DateJsonAdapter().nullSafe())
         .build()
 
     init {
@@ -87,7 +90,8 @@ class GeneratorApiClientImpl(
                         val errorResponse = moshi.adapter(ErrorResponse::class.java).fromJson(it)
                         ApiError.ServerError(
                             errorResponse?.errors?.status,
-                            errorResponse?.errors?.message)
+                            errorResponse?.errors?.message
+                        )
                     } ?: ApiError.Unknown
                     else -> ApiError.Unknown
                 }
