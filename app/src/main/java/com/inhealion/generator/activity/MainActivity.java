@@ -38,8 +38,7 @@ public class MainActivity extends AppCompatActivity  {
         super.onCreate(savedInstanceState);
         LogInFragment = new log_in();
         FoldersFragment = new folders();
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("GeneratorApiClient", client); // There we should be able to pack client obj to bunble
+
        getSupportFragmentManager().beginTransaction()
                 .replace(R.id.frame,LogInFragment)
                 .commit();

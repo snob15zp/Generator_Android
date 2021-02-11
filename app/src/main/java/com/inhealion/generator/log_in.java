@@ -83,14 +83,19 @@ public class log_in extends Fragment {
         pwFiled = v.findViewById( R.id.pwFiled);
         logInBtn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
                 String login = unField.getText().toString();
                 String password = pwFiled.getText().toString();
                 //there we should get client object from bundle
                 //GeneratorApiClient client = GeneratorApiClient.instance();
-                client.signIn(login, password, new ApiCallback<User>() {
+                /////////////////GeneratorApiClient.instance().signIn(login, password, new ApiCallback<User>() {
+                GeneratorApiClient.instance().signIn("test", "admin", new ApiCallback<User>() {
                     @Override
                     public void success(User user) {
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable("User", user); // There we should be able to pack client obj to bunble
                         FoldersFragment = new folders();
+                        FoldersFragment.setArguments(bundle);
                         getFragmentManager().beginTransaction()
                                 .replace(R.id.frame,FoldersFragment)
                                 .commit();

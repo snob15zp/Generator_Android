@@ -9,6 +9,21 @@ import androidx.fragment.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+
+import com.inhealion.networking.ApiCallback;
+import com.inhealion.networking.GeneratorApiClient;
+import com.inhealion.networking.api.model.Folder;
+import com.inhealion.networking.api.model.User;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import timber.log.Timber;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -25,6 +40,14 @@ public class folders extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
+    static User user;
+    static ListView lv;
+
+
+    // Create an ArrayAdapter from List
+
+
+
 
     public folders() {
         // Required empty public constructor
@@ -50,10 +73,12 @@ public class folders extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
+
         }
     }
 
@@ -62,7 +87,36 @@ public class folders extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View v =  inflater.inflate(R.layout.fragment_folders, container, false);
-        client.fetchFolders();
+        user = (User) getArguments().getParcelable("User");
+        lv = (ListView) v.findViewById(R.id.folderListView);
+        ArrayList<String> listItems=new ArrayList<String>();
+        String[] names = {};
+        //DEFINING A STRING ADAPTER WHICH WILL HANDLE THE DATA OF THE LISTVIEW
+        ArrayAdapter<String> adapter;
+
+
+        adapter=new ArrayAdapter<String>(getActivity(),
+                android.R.layout.simple_list_item_1,
+                listItems);
+        lv.setAdapter(adapter);
+        adapter.add("ABC");
+        GeneratorApiClient.instance().fetchFolders(user.getProfile().getId(), new ApiCallback<List<Folder>>() {
+            @Override
+            public void success(List<Folder> value) {
+                int i = 0;
+                while (i < value.size()) {
+                    Timber.d("%s",value.get(i).getName());
+                    //names[i]=value.get(i).getName();
+                    i++;
+                }
+
+            }
+
+            @Override
+            public void failure(@NotNull Exception error) {
+                Timber.d(error, " + FOLDERS PROCESSING ERROR");
+            }
+        });
         return v;
     }
 
