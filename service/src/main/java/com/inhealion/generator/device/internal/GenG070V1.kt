@@ -7,14 +7,15 @@ import com.inhealion.service.BuildConfig
 import com.intelligt.modbus.jlibmodbus.Modbus
 import com.intelligt.modbus.jlibmodbus.master.ModbusMaster
 import com.intelligt.modbus.jlibmodbus.master.ModbusMasterFactory
-import com.intelligt.modbus.jlibmodbus.master.ModbusMasterRTU
+import com.intelligt.modbus.jlibmodbus.msg.base.ModbusFileRecord
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
-import com.intelligt.modbus.jlibmodbus.serial.SerialPortAbstractFactory
 import com.intelligt.modbus.jlibmodbus.serial.SerialUtils
+import com.juul.kable.characteristicOf
 import kotlinx.coroutines.flow.Flow
 import java.io.ByteArrayInputStream
+import java.nio.ByteBuffer
 
-class GenG070V1 : Generator {
+class GenG070V1(address: String) : Generator {
     override val ready: Boolean
         get() = TODO("Not yet implemented")
 
@@ -29,14 +30,16 @@ class GenG070V1 : Generator {
     init {
         Modbus.setLogLevel(if (BuildConfig.DEBUG) Modbus.LogLevel.LEVEL_DEBUG else Modbus.LogLevel.LEVEL_RELEASE)
 
-        val serialParameters = SerialParameters()
-        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth())
+        val serialParameters = SerialParameters().apply {
+            device = address
+        }
+        val readCharacteristic = characteristicOf(SERVICE_UUID, READ_CHARACTERISTICS_UUID)
+        val writeCharacteristic = characteristicOf(SERVICE_UUID, WRITE_CHARACTERISTICS_UUID)
+        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic, readCharacteristic))
         modbusMasterRTU = ModbusMasterFactory.createModbusMasterRTU(serialParameters)
     }
 
     override fun tryToInit(): Boolean {
-        modbusMasterRTU.connect()
-
         return true
     }
 
@@ -49,7 +52,15 @@ class GenG070V1 : Generator {
     }
 
     override fun putFile(fileName: String, content: ByteArrayInputStream): ErrorCodes {
-        TODO("Not yet implemented")
+        try {
+            val data = content.readBytes().asList().chunked(224)
+
+            modbusMasterRTU.writeFileRecord(DefaultAddress, ModbusFileRecord(0, 0, data))
+
+            return ErrorCodes.NO_ERROR
+        } catch (e: Exception) {
+            return ErrorCodes.FATAL_ERROR
+        }
     }
 
     override val putFilePart: Flow<Triple<String, Int, Int>>
@@ -69,8 +80,17 @@ class GenG070V1 : Generator {
         TODO("Not yet implemented")
     }
 
-    @ExperimentalUnsignedTypes
     companion object {
+        private const val SERVICE_UUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455"
+        private const val READ_CHARACTERISTICS_UUID = "49535343-8841-43f4-a8d4-ecbe34729bb3"
+        private const val WRITE_CHARACTERISTICS_UUID = "49535343-1e4d-4bd9-ba61-23c647249616"
+
+
+        /**
+         * Максимальный передаваемый юнит
+        **/
+        private const val MaxItemSize = 242
+
         /**
          * Максимальный размер названия файла
          **/
@@ -80,7 +100,7 @@ class GenG070V1 : Generator {
         /**
          * Адрес по-умолчанию
          **/
-        const val DefaultAddress: UByte = 10u
+        const val DefaultAddress: Int = 0x0A
 
         /**
          * Адрес регистра версии
