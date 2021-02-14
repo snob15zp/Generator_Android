@@ -1,18 +1,18 @@
-package com.inhealion.generator.device.modbus
+package com.intelligt.modbus.jlibmodbus.serial
 
+import com.inhealion.generator.device.modbus.SerialPortBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
 import com.intelligt.modbus.jlibmodbus.serial.SerialPortAbstractFactory
 import com.intelligt.modbus.jlibmodbus.serial.SerialPortException
 import com.juul.kable.Characteristic
 
 class SerialPortFactoryBluetooth(
-    private val writeCharacteristic: Characteristic,
-    private val readCharacteristic: Characteristic
+    private val writeCharacteristic: Characteristic
 ) :
     SerialPortAbstractFactory(SerialPortFactoryBluetooth::class.java.canonicalName, "bluetooth") {
 
     @Throws(SerialPortException::class)
-    fun createSerialImpl(sp: SerialParameters) = SerialPortBluetooth(sp, writeCharacteristic, readCharacteristic)
+    override fun createSerialImpl(sp: SerialParameters) = SerialPortBluetooth(sp, writeCharacteristic)
 
-    fun getPortIdentifiersImpl() = emptyList<String>()
+    override fun getPortIdentifiersImpl() = emptyList<String>()
 }

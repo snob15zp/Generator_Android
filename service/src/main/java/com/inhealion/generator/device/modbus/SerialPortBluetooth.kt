@@ -1,83 +1,87 @@
 package com.inhealion.generator.device.modbus
 
 import android.bluetooth.BluetoothAdapter
+import com.intelligt.modbus.jlibmodbus.exception.ModbusIOException
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
 import com.intelligt.modbus.jlibmodbus.serial.SerialPort
-import com.juul.kable.Characteristic
-import com.juul.kable.Peripheral
-import com.juul.kable.State
-import com.juul.kable.peripheral
-import kotlinx.coroutines.GlobalScope
+import com.juul.kable.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 import timber.log.Timber
+import java.io.IOException
+import java.util.*
 
 class SerialPortBluetooth(
     sp: SerialParameters,
-    private val writeCharacteristic: Characteristic,
-    private val readCharacteristic: Characteristic
+    private val writeCharacteristic: Characteristic
 ) : SerialPort(sp) {
     private var peripheral: Peripheral? = null
+    private val scope = GlobalScope
+
+    private var connectionStateJob: Job? = null
 
     override fun write(b: Int) {
-        runBlocking {
-            peripheral?.write(writeCharacteristic, byteArrayOf(b.toByte()))
+        runBlocking(scope.coroutineContext) {
+            peripheral?.connect()
+            println("TTT > write byte to $peripheral: $b")
+            peripheral?.write(writeCharacteristic, byteArrayOf(b.toByte()), WriteType.WithoutResponse)
+            println("TTT > write byte finished")
+
         }
     }
 
     override fun write(bytes: ByteArray) {
-        runBlocking {
-            peripheral?.write(writeCharacteristic, bytes)
+        runBlocking(scope.coroutineContext) {
+            peripheral?.connect()
+            println("TTT > write data to $peripheral: ${bytes.contentToString()}")
+            peripheral?.write(writeCharacteristic, bytes, WriteType.WithoutResponse)
+            println("TTT > write data finished")
         }
     }
 
-    override fun open() = runBlocking {
+    override fun open() {
         val bluetoothDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(serialParameters.device)
-        peripheral = peripheral(bluetoothDevice)
-            .apply {
-                connect()
-                GlobalScope.launch {
-                    state.collect {
-                        when (it) {
-                            is State.Disconnected -> {
-                                Timber.d("Device disconnected ${it.status}")
-                                peripheral = null
-                            }
-                            else -> Timber.d("Device state changed: $it")
-                        }
-                    }
-                }
+        peripheral = scope.peripheral(bluetoothDevice)
+        //connectionStateJob = scope.launch { connectionStateHandlerJob() }
+    }
+
+
+    override fun read() = runBlocking(scope.coroutineContext) {
+        withTimeoutOrNull(1000) {
+            peripheral?.connect()
+
+            val data = peripheral
+                ?.observe(writeCharacteristic)
+                ?.first()
+
+            println("TTT > read data from $peripheral: ${data.contentToString()}")
+            if (data?.isNotEmpty() == true) {
+                data[0].toInt()
+            } else {
+                throw ModbusIOException("Read timeout")
             }
+        } ?: throw ModbusIOException("Read timeout")
     }
 
-    override fun read() = runBlocking {
-        val data = peripheral?.read(readCharacteristic)
-        if (data?.isNotEmpty() == true) {
-            return@runBlocking data[0].toInt()
-        } else {
-            END_OF_STREAM
-        }
-    }
-
-    override fun read(b: ByteArray, off: Int, len: Int) = runBlocking {
-        val data = peripheral?.read(readCharacteristic)
-        if (data?.isNotEmpty() == true) {
-            data.copyInto(b, 0, off, off + len)
-            return@runBlocking data.size
-        } else {
-            return@runBlocking END_OF_STREAM
-        }
+    override fun read(b: ByteArray, off: Int, len: Int) = runBlocking(scope.coroutineContext) {
+        throw NotImplementedError()
     }
 
     override fun close() {
         runBlocking {
-            peripheral?.disconnect()
+            connectionStateJob?.cancel()
             peripheral = null
         }
     }
 
     override fun isOpened() = peripheral != null
+
+    private suspend fun connectionStateHandlerJob() = peripheral?.let {
+        it.state.collect { state ->
+            Timber.d("Device state changed: $state")
+        }
+    }
 
     companion object {
         private const val END_OF_STREAM = -1

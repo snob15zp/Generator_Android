@@ -2,30 +2,35 @@ package com.inhealion.generator.device.internal
 
 import com.inhealion.generator.device.ErrorCodes
 import com.inhealion.generator.device.Generator
-import com.inhealion.generator.device.modbus.SerialPortFactoryBluetooth
 import com.inhealion.service.BuildConfig
 import com.intelligt.modbus.jlibmodbus.Modbus
 import com.intelligt.modbus.jlibmodbus.master.ModbusMaster
-import com.intelligt.modbus.jlibmodbus.master.ModbusMasterFactory
 import com.intelligt.modbus.jlibmodbus.msg.base.ModbusFileRecord
+import com.intelligt.modbus.jlibmodbus.net.ModbusMasterBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
+import com.intelligt.modbus.jlibmodbus.serial.SerialPortFactoryBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialUtils
 import com.juul.kable.characteristicOf
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import timber.log.Timber
 import java.io.ByteArrayInputStream
-import java.nio.ByteBuffer
 
 class GenG070V1(address: String) : Generator {
-    override val ready: Boolean
-        get() = TODO("Not yet implemented")
+    override var ready: Boolean = false
+        private set
 
-    override val version: String
-        get() = TODO("Not yet implemented")
+    override var version: String = ""
+        private set
 
-    override val serial: ByteArray
-        get() = TODO("Not yet implemented")
+    override var serial: ByteArray = ByteArray(0)
+        private set
+
 
     private val modbusMasterRTU: ModbusMaster
+
+    private val _fileImportProgress = MutableSharedFlow<Int>()
+    override val fileImportProgress: Flow<Int> get() = _fileImportProgress
 
     init {
         Modbus.setLogLevel(if (BuildConfig.DEBUG) Modbus.LogLevel.LEVEL_DEBUG else Modbus.LogLevel.LEVEL_RELEASE)
@@ -33,14 +38,29 @@ class GenG070V1(address: String) : Generator {
         val serialParameters = SerialParameters().apply {
             device = address
         }
-        val readCharacteristic = characteristicOf(SERVICE_UUID, READ_CHARACTERISTICS_UUID)
         val writeCharacteristic = characteristicOf(SERVICE_UUID, WRITE_CHARACTERISTICS_UUID)
-        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic, readCharacteristic))
-        modbusMasterRTU = ModbusMasterFactory.createModbusMasterRTU(serialParameters)
+        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic))
+        modbusMasterRTU = ModbusMasterBluetooth(serialParameters)
+        tryToInit()
     }
 
     override fun tryToInit(): Boolean {
-        return true
+        try {
+            modbusMasterRTU.connect()
+            val versionData = modbusMasterRTU.readInputRegisters(DEFAULT_ADDRESS, VERSION_REGISTER_ADDR, 3)
+            this.version = "${versionData[0]}.${versionData[1]}.${versionData[2]}"
+            serial = modbusMasterRTU.readInputRegisters(DEFAULT_ADDRESS, SERIAL_REGISTER_ADDR, 6)
+                .map { it.toByte() }
+                .toByteArray()
+            ready = true
+            return true
+        } catch (e: Exception) {
+            Timber.e(e, "Unable to init device")
+            ready = false
+            return false
+        } finally {
+            modbusMasterRTU.disconnect()
+        }
     }
 
     override fun eraseAll(): ErrorCodes {
@@ -52,33 +72,22 @@ class GenG070V1(address: String) : Generator {
     }
 
     override fun putFile(fileName: String, content: ByteArrayInputStream): ErrorCodes {
-        try {
-            val data = content.readBytes().asList().chunked(224)
-
-            modbusMasterRTU.writeFileRecord(DefaultAddress, ModbusFileRecord(0, 0, data))
-
-            return ErrorCodes.NO_ERROR
+        return try {
+            val data = content.readBytes()
+            var sending = 0
+            Lfov(fileName, data, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
+                modbusMasterRTU.writeFileRecord(DEFAULT_ADDRESS, ModbusFileRecord(0, 0, it))
+                sending += it.size
+                _fileImportProgress.tryEmit((sending.toFloat() / data.size * 100).toInt())
+            }
+            ErrorCodes.NO_ERROR
         } catch (e: Exception) {
-            return ErrorCodes.FATAL_ERROR
+            Timber.e(e, "Unable to send file $fileName")
+            ErrorCodes.FATAL_ERROR
         }
     }
 
-    override val putFilePart: Flow<Triple<String, Int, Int>>
-        get() = TODO("Not yet implemented")
-
-    override fun disconnect() = modbusMasterRTU.disconnect()
-
-    override fun bootloaderUploadMcuFwChunk(chunk: ByteArray): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun bootloaderRunMcuFw() {
-        TODO("Not yet implemented")
-    }
-
-    override fun bootloaderReset() {
-        TODO("Not yet implemented")
-    }
+    override fun close() = modbusMasterRTU.disconnect()
 
     companion object {
         private const val SERVICE_UUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455"
@@ -88,29 +97,29 @@ class GenG070V1(address: String) : Generator {
 
         /**
          * Максимальный передаваемый юнит
-        **/
-        private const val MaxItemSize = 242
+         **/
+        private const val MAX_ITEM_SIZE = 242
 
         /**
          * Максимальный размер названия файла
          **/
-        const val MaxFilenameSz = 12
+        const val MAX_FILENAME_SIZE = 12
 
 
         /**
          * Адрес по-умолчанию
          **/
-        const val DefaultAddress: Int = 0x0A
+        const val DEFAULT_ADDRESS: Int = 0x0A
 
         /**
          * Адрес регистра версии
          **/
-        const val VersionRegisterAddr: UShort = 16u
+        const val VERSION_REGISTER_ADDR: Int = 0x10
 
         /**
          * Адрес регистра версии
          **/
-        const val SerialRegisterAddr: UShort = 48u
+        const val SERIAL_REGISTER_ADDR: Int = 0x30
 
 
         /**

@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.isVisible
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.DiscoveryFragmentBinding
@@ -31,15 +32,19 @@ class DiscoveryFragment : BaseFragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.devicesRecyclerView.adapter = adapter
 
-        viewModel.devices.observe(viewLifecycleOwner) { list ->
-            adapter.submitList(list.map { DeviceUiModel(it.name ?: "<Unknown>", it.address) })
-        }
+        viewModel.apply {
+            devices.observe(viewLifecycleOwner) { list ->
 
-        viewModel.inProgress.observe(viewLifecycleOwner) {
-            binding.progressBar.isVisible = it
-            //binding.devicesRecyclerView.isVisible = !it
+                adapter.submitList(list.map { DeviceUiModel(it.name ?: "<Unknown>", it.address) })
+            }
+            deviceInfo.observe(viewLifecycleOwner) {
+                Toast.makeText(requireContext(), "Device serial: $it", Toast.LENGTH_LONG).show()
+            }
+            inProgress.observe(viewLifecycleOwner) {
+                binding.progressBar.isVisible = it
+                //binding.devicesRecyclerView.isVisible = !it
+            }
         }
-
         viewModel.start()
     }
 
