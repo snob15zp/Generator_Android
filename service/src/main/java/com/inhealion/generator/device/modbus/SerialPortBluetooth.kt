@@ -75,7 +75,9 @@ class SerialPortBluetooth(
         }
     }
 
-    override fun isOpened() = peripheral != null
+    override fun isOpened(): Boolean {
+        return peripheral != null
+    }
 
     private suspend fun connectionStateHandlerJob() = peripheral?.let {
         it.state.collect { state ->

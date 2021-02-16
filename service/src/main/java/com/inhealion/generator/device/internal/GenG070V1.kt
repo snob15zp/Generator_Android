@@ -5,6 +5,7 @@ import com.inhealion.generator.device.Generator
 import com.inhealion.service.BuildConfig
 import com.intelligt.modbus.jlibmodbus.Modbus
 import com.intelligt.modbus.jlibmodbus.master.ModbusMaster
+import com.intelligt.modbus.jlibmodbus.master.ModbusMasterFactory
 import com.intelligt.modbus.jlibmodbus.msg.base.ModbusFileRecord
 import com.intelligt.modbus.jlibmodbus.net.ModbusMasterBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
@@ -40,7 +41,8 @@ class GenG070V1(address: String) : Generator {
         }
         val writeCharacteristic = characteristicOf(SERVICE_UUID, WRITE_CHARACTERISTICS_UUID)
         SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic))
-        modbusMasterRTU = ModbusMasterBluetooth(serialParameters)
+        //modbusMasterRTU = ModbusMasterBluetooth(serialParameters)
+        modbusMasterRTU = ModbusMasterFactory.createModbusMasterRTU(serialParameters)
         tryToInit()
     }
 
