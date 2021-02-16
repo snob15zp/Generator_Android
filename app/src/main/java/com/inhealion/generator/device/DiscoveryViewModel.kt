@@ -1,18 +1,15 @@
 package com.inhealion.generator.device
 
-import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.device.bluetooth.BleDeviceScanner
 import com.inhealion.generator.device.model.BleDevice
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import timber.log.Timber
-import java.io.ByteArrayInputStream
-import java.util.*
+import kotlinx.coroutines.launch
 
 
 class DiscoveryViewModel(
