@@ -7,7 +7,6 @@ import com.intelligt.modbus.jlibmodbus.Modbus
 import com.intelligt.modbus.jlibmodbus.master.ModbusMaster
 import com.intelligt.modbus.jlibmodbus.master.ModbusMasterFactory
 import com.intelligt.modbus.jlibmodbus.msg.base.ModbusFileRecord
-import com.intelligt.modbus.jlibmodbus.net.ModbusMasterBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
 import com.intelligt.modbus.jlibmodbus.serial.SerialPortFactoryBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialUtils
