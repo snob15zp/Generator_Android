@@ -39,8 +39,8 @@ class GenG070V1(address: String) : Generator {
             device = address
         }
         val writeCharacteristic = characteristicOf(SERVICE_UUID, WRITE_CHARACTERISTICS_UUID)
-        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic))
-        //modbusMasterRTU = ModbusMasterBluetooth(serialParameters)
+        val readCharacteristic = characteristicOf(SERVICE_UUID, READ_CHARACTERISTICS_UUID)
+        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic, readCharacteristic))
         modbusMasterRTU = ModbusMasterFactory.createModbusMasterRTU(serialParameters)
         tryToInit()
     }

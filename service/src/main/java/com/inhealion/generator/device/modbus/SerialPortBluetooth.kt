@@ -6,62 +6,75 @@ import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
 import com.intelligt.modbus.jlibmodbus.serial.SerialPort
 import com.juul.kable.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.*
+import okio.ByteString.Companion.toByteString
 import timber.log.Timber
-import java.io.IOException
-import java.util.*
+import java.nio.ByteBuffer
 
 class SerialPortBluetooth(
     sp: SerialParameters,
-    private val writeCharacteristic: Characteristic
+    private val writeCharacteristic: Characteristic,
+    private val readCharacteristic: Characteristic
 ) : SerialPort(sp) {
     private var peripheral: Peripheral? = null
     private val scope = GlobalScope
+    private var connectionJob: Job? = null
 
-    private var connectionStateJob: Job? = null
+    private val operationChannel = Channel<Operation>()
+    private val stateFlow = MutableStateFlow(DeviceState.DISCONNECTED)
 
     override fun write(b: Int) {
-        runBlocking(scope.coroutineContext) {
-            peripheral?.connect()
-            println("TTT > write byte to $peripheral: $b")
-            peripheral?.write(writeCharacteristic, byteArrayOf(b.toByte()), WriteType.WithoutResponse)
-            println("TTT > write byte finished")
-
-        }
+        operationChannel.offer(Operation.Write(ByteBuffer.allocate(1).put(b.toByte())))
+        waitFor(DeviceState.WRITE)
     }
 
     override fun write(bytes: ByteArray) {
-        runBlocking(scope.coroutineContext) {
-            peripheral?.connect()
-            println("TTT > write data to $peripheral: ${bytes.contentToString()}")
-            peripheral?.write(writeCharacteristic, bytes, WriteType.WithoutResponse)
-            println("TTT > write data finished")
-        }
+        operationChannel.offer(Operation.Write(ByteBuffer.wrap(bytes)))
+        waitFor(DeviceState.WRITE)
     }
 
     override fun open() {
         val bluetoothDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(serialParameters.device)
         peripheral = scope.peripheral(bluetoothDevice)
-        //connectionStateJob = scope.launch { connectionStateHandlerJob() }
+        try {
+            connectionJob = scope.launch {
+                peripheral?.run {
+                    connect()
+                    launch { connectionStateHandlerJob(this@run) }
+                    launch {
+                        observe(writeCharacteristic).collect {
+                            println("TTT > read data from write characteristics: ${it.toByteString()}")
+                        }
+                    }
+                    launch {
+                        observe(writeCharacteristic).collect {
+                            println("TTT > read data from read characteristics: ${it.toByteString()}")
+                        }
+                    }
+                    launch {
+                        operationChannel.consumeEach {
+                            when (it) {
+                                is Operation.Write ->
+                                    kotlin.runCatching {
+                                        println("TTT > write byte array ${it.data.toByteString()}")
+                                        write(writeCharacteristic, it.data.array(), WriteType.WithoutResponse)
+                                        this@SerialPortBluetooth.stateFlow.emit(DeviceState.WRITE)
+                                    }
+                            }
+                        }
+                    }
+                }
+            }
+            waitFor(DeviceState.CONNECTED)
+        } catch (e: Exception) {
+            Timber.e(e, "Connection error")
+        }
     }
 
-
-    override fun read() = runBlocking(scope.coroutineContext) {
-        withTimeoutOrNull(1000) {
-            peripheral?.connect()
-
-            val data = peripheral
-                ?.observe(writeCharacteristic)
-                ?.first()
-
-            println("TTT > read data from $peripheral: ${data.contentToString()}")
-            if (data?.isNotEmpty() == true) {
-                data[0].toInt()
-            } else {
-                throw ModbusIOException("Read timeout")
-            }
-        } ?: throw ModbusIOException("Read timeout")
+    override fun read(): Int {
+        throw NotImplementedError()
     }
 
     override fun read(b: ByteArray, off: Int, len: Int) = runBlocking(scope.coroutineContext) {
@@ -70,7 +83,7 @@ class SerialPortBluetooth(
 
     override fun close() {
         runBlocking {
-            connectionStateJob?.cancel()
+            peripheral?.disconnect()
             peripheral = null
         }
     }
@@ -79,14 +92,33 @@ class SerialPortBluetooth(
         return peripheral != null
     }
 
-    private suspend fun connectionStateHandlerJob() = peripheral?.let {
-        it.state.collect { state ->
+    private fun waitFor(state: DeviceState) = runBlocking {
+        withTimeout(10000) { stateFlow.filter { it == state }.first() }
+    }
+
+    private suspend fun connectionStateHandlerJob(peripheral: Peripheral) =
+        peripheral.state.collect { state ->
+            when (state) {
+                State.Connected -> this.stateFlow.emit(DeviceState.CONNECTED)
+                is State.Disconnected -> {
+                    this.stateFlow.emit(DeviceState.DISCONNECTED)
+                    connectionJob?.cancel()
+                }
+                else -> Unit
+            }
+
             Timber.d("Device state changed: $state")
         }
+
+    enum class DeviceState {
+        CONNECTED, DISCONNECTED, WRITE, READ
+    }
+
+    sealed class Operation {
+        data class Write(val data: ByteBuffer) : Operation()
     }
 
     companion object {
         private const val END_OF_STREAM = -1
     }
-
 }
