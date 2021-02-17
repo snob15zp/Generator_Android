@@ -31,7 +31,14 @@ class SerialPortBluetooth(
     }
 
     override fun write(bytes: ByteArray) {
-        operationChannel.offer(Operation.Write(ByteBuffer.wrap(bytes)))
+        operationChannel.offer(
+            Operation.Write(
+                ByteBuffer.allocate(bytes.size + 4)
+                    .putShort(0x1b00)
+                    .put(bytes)
+                    .putShort(0x1b01)
+            )
+        )
         waitFor(DeviceState.WRITE)
     }
 
@@ -58,7 +65,7 @@ class SerialPortBluetooth(
                             when (it) {
                                 is Operation.Write ->
                                     kotlin.runCatching {
-                                        println("TTT > write byte array ${it.data.toByteString()}")
+                                        println("TTT > write byte array ${it.data.array().toByteString()}")
                                         write(writeCharacteristic, it.data.array(), WriteType.WithoutResponse)
                                         this@SerialPortBluetooth.stateFlow.emit(DeviceState.WRITE)
                                     }
@@ -74,11 +81,11 @@ class SerialPortBluetooth(
     }
 
     override fun read(): Int {
-        throw NotImplementedError()
+        return END_OF_STREAM
     }
 
-    override fun read(b: ByteArray, off: Int, len: Int) = runBlocking(scope.coroutineContext) {
-        throw NotImplementedError()
+    override fun read(b: ByteArray, off: Int, len: Int): Int {
+        return END_OF_STREAM
     }
 
     override fun close() {
