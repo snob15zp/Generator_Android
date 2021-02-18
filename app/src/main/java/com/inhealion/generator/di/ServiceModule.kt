@@ -5,9 +5,9 @@ import com.inhealion.generator.device.DeviceConnectionFactory
 import com.inhealion.generator.device.bluetooth.BleDeviceScanner
 import com.inhealion.generator.device.bluetooth.BluetoothScannerImpl
 import com.inhealion.generator.device.internal.DeviceConnectionFactoryImpl
-import com.inhealion.networking.GeneratorApiCoroutinesClient
-import com.inhealion.networking.account.AccountStore
-import com.inhealion.networking.account.SharedPrefAccountStore
+import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
+import com.inhealion.generator.networking.account.AccountStore
+import com.inhealion.generator.networking.account.SharedPrefAccountStore
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 

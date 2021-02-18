@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Generator</string>
+    <string name="account_login">Account Login</string>
+    <string name="sign_in">Sign In</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
 </resources>
