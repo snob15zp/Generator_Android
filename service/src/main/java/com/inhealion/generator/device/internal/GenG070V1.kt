@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import timber.log.Timber
 import java.io.ByteArrayInputStream
+import java.io.IOException
 
 class GenG070V1(address: String) : Generator {
     override var ready: Boolean = false
@@ -42,15 +43,26 @@ class GenG070V1(address: String) : Generator {
         val readCharacteristic = characteristicOf(SERVICE_UUID, READ_CHARACTERISTICS_UUID)
         SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic, readCharacteristic))
         modbusMasterRTU = ModbusMasterFactory.createModbusMasterRTU(serialParameters)
-        tryToInit()
+        if (!tryToInit()) {
+            throw IOException("Unable to init device")
+        }
     }
 
     override fun tryToInit(): Boolean {
         try {
+            println("TTT > connect")
             modbusMasterRTU.connect()
-            val versionData = modbusMasterRTU.readInputRegisters(DEFAULT_ADDRESS, VERSION_REGISTER_ADDR, 3)
+            try {
+                println("TTT > fake read for initialize modbus on the device")
+                modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, 0, 1)
+            } catch (e: Exception) {
+                //Ignore exception
+            }
+            println("TTT > read version")
+            val versionData = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
             this.version = "${versionData[0]}.${versionData[1]}.${versionData[2]}"
-            serial = modbusMasterRTU.readInputRegisters(DEFAULT_ADDRESS, SERIAL_REGISTER_ADDR, 6)
+            println("TTT > read serial")
+            serial = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, SERIAL_REGISTER_ADDR, 6)
                 .map { it.toByte() }
                 .toByteArray()
             ready = true
@@ -60,7 +72,7 @@ class GenG070V1(address: String) : Generator {
             ready = false
             return false
         } finally {
-            modbusMasterRTU.disconnect()
+            close()
         }
     }
 
@@ -77,7 +89,7 @@ class GenG070V1(address: String) : Generator {
             val data = content.readBytes()
             var sending = 0
             Lfov(fileName, data, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
-                modbusMasterRTU.writeFileRecord(DEFAULT_ADDRESS, ModbusFileRecord(0, 0, it))
+                modbusMasterRTU.writeFileRecord(SERVER_ADDRESS, ModbusFileRecord(0, 0, it))
                 sending += it.size
                 _fileImportProgress.tryEmit((sending.toFloat() / data.size * 100).toInt())
             }
@@ -110,7 +122,7 @@ class GenG070V1(address: String) : Generator {
         /**
          * Адрес по-умолчанию
          **/
-        const val DEFAULT_ADDRESS: Int = 0x0A
+        const val SERVER_ADDRESS: Int = 0x0A
 
         /**
          * Адрес регистра версии

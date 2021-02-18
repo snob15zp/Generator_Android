@@ -34,7 +34,6 @@ class DiscoveryFragment : BaseFragment() {
 
         viewModel.apply {
             devices.observe(viewLifecycleOwner) { list ->
-
                 adapter.submitList(list.map { DeviceUiModel(it.name ?: "<Unknown>", it.address) })
             }
             deviceInfo.observe(viewLifecycleOwner) {
@@ -43,6 +42,9 @@ class DiscoveryFragment : BaseFragment() {
             inProgress.observe(viewLifecycleOwner) {
                 binding.progressBar.isVisible = it
                 //binding.devicesRecyclerView.isVisible = !it
+            }
+            errorMessage.observe(viewLifecycleOwner) {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
         viewModel.start()

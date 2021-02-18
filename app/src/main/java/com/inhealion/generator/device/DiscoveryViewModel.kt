@@ -20,6 +20,7 @@ class DiscoveryViewModel(
     val inProgress = MutableLiveData(false)
     val devices = MutableLiveData<List<BleDevice>>()
     val deviceInfo = MutableLiveData<String>()
+    val errorMessage = MutableLiveData<String>()
 
     private var discoveryJob: Job? = null
 
@@ -39,10 +40,12 @@ class DiscoveryViewModel(
         discoveryJob = null
 
         viewModelScope.launch(Dispatchers.IO) {
-            with(deviceConnectionFactory.connect(address)) {
-                deviceInfo.postValue(serial.decodeToString())
-                //putFile("file_01.txt", ByteArrayInputStream(DUMMY_PROGRAM.encodeToByteArray()))
-            }
+            runCatching {
+                with(deviceConnectionFactory.connect(address)) {
+                    deviceInfo.postValue(serial.decodeToString())
+                    //putFile("file_01.txt", ByteArrayInputStream(DUMMY_PROGRAM.encodeToByteArray()))
+                }
+            }.onFailure { errorMessage.postValue("Connection failed") }
         }
     }
 
