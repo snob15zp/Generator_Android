@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/settings_nav_graph.xml"
+    app:startDestination="@id/importFragment">
+
+    <fragment
+        android:id="@+id/importFragment"
+        android:name="com.inhealion.generator.presentation.device.ImportFragment"
+        android:label="ImportFragment">
+        <argument
+            android:name="importAction"
+            app:argType="com.inhealion.generator.presentation.device.ImportAction"
+            app:nullable="false" />
+        <action
+            android:id="@+id/action_importFragment_to_discoveryFragment"
+            app:destination="@id/discoveryFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/discoveryFragment"
+        android:name="com.inhealion.generator.presentation.device.DiscoveryFragment"
+        android:label="DiscoveryFragment" />
+</navigation>

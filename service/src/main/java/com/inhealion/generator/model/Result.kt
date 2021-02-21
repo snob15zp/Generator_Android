@@ -11,6 +11,8 @@ sealed class Result<out T> {
             else -> null
         }
 
+    fun valueOrNull(): T? = if (this is Success<T>) this.value else null
+
     companion object {
         inline fun <T> success(value: T): Result<T> =
             Success(value)
@@ -20,6 +22,12 @@ sealed class Result<out T> {
     }
 
 }
+
+inline fun <T, R> Result<T>.mapSuccess(action: (T) -> Result<R>): Result<R> =
+    when (this){
+        is Result.Success<T> -> action.invoke(this.value)
+        is Result.Failure<T> -> Result.failure(this.exception)
+    }
 
 
 inline fun <T> Result<T>.onFailure(action: (exception: Throwable) -> Unit): Result<T> {

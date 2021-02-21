@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <Preference
+        android:icon="@drawable/ic_baseline_account_circle_24"
+        android:layout="@layout/settings_item"
+        app:key="account"
+        app:title="@string/settings_account" />
+
+    <Preference
+        android:icon="@drawable/ic_baseline_bluetooth_24"
+        android:layout="@layout/settings_item"
+        app:key="device"
+        app:title="@string/settings_device" />
+
+
+    <!--    <Preference-->
+    <!--        app:key="firmware"-->
+    <!--        android:icon="@drawable/ic_baseline_memory_24"-->
+    <!--        android:layout="@layout/settings_item"-->
+    <!--        app:title="@string/settings_firmware" />-->
+
+    <Preference
+        android:icon="@drawable/ic_baseline_logout_24"
+        android:layout="@layout/settings_logout"
+        app:key="logout"
+        app:title="@string/settings_logout" />
+
+</PreferenceScreen>

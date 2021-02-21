@@ -2,6 +2,7 @@ package com.inhealion.generator.networking.internal
 
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.account.AccountStore
+import com.inhealion.generator.networking.adapter.DateJsonAdapter
 import com.inhealion.generator.networking.api.GeneratorService
 import com.inhealion.generator.networking.api.model.ErrorResponse
 import com.inhealion.service.BuildConfig
@@ -51,7 +52,17 @@ internal open class BaseGeneratorApiClient(
 
 
     protected fun handleError(error: Exception) = when (error) {
-        is HttpException -> error.response()?.errorBody()?.string()?.let {
+        is HttpException -> parseHttpException(error)
+        is java.net.ConnectException -> ApiError.NetworkError
+        else -> ApiError.Unknown
+    }.also {
+        Timber.d(error, "Could not to send request")
+    }
+
+    private fun parseHttpException(error: HttpException): ApiError {
+        if (error.code() == 401) return ApiError.Unauthorized
+
+        return error.response()?.errorBody()?.string()?.let {
             try {
                 moshi.adapter(ErrorResponse::class.java).fromJson(it)
             } catch (e: Exception) {
@@ -64,11 +75,7 @@ internal open class BaseGeneratorApiClient(
                 )
             }
         } ?: ApiError.Unknown
-        else -> ApiError.Unknown
-    }.also {
-        Timber.d(error, "Could not to send request")
     }
-
 
     inner class AuthHeaderInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {

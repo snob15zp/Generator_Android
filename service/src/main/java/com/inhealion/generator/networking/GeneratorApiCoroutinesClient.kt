@@ -5,6 +5,7 @@ import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.api.model.Folder
 import com.inhealion.generator.networking.api.model.Program
 import com.inhealion.generator.networking.api.model.User
+import com.inhealion.generator.networking.api.model.UserProfile
 import com.inhealion.generator.networking.internal.GeneratorApiCoroutinesClientImpl
 import java.io.InputStream
 
@@ -19,6 +20,8 @@ interface GeneratorApiCoroutinesClient {
     suspend fun downloadFolder(folderId: String): Result<InputStream?>
 
     suspend fun logout(): Result<Unit>
+
+    suspend fun fetchUserProfile(userId: String): Result<UserProfile>
 
     companion object {
         private var instance: GeneratorApiCoroutinesClient? = null

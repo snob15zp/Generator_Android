@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_nav_graph"
-    app:startDestination="@id/loginFragment">
+    app:startDestination="@id/folderFragment">
 
     <fragment
         android:id="@+id/loginFragment"
-        android:name="com.inhealion.generator.login.LoginFragment"
+        android:name="com.inhealion.generator.presentation.login.LoginFragment"
         android:label="LoginFragment" />
+
     <fragment
         android:id="@+id/folderFragment"
-        android:name="com.inhealion.generator.programs.FolderFragment"
+        android:name="com.inhealion.generator.presentation.programs.FolderFragment"
         android:label="FolderFragment">
         <action
             android:id="@+id/action_folderFragment_to_programFragment"
@@ -19,18 +19,11 @@
     </fragment>
     <fragment
         android:id="@+id/programFragment"
-        android:name="com.inhealion.generator.programs.ProgramFragment"
-        android:label="ProgramFragment" />
-    <fragment
-        android:id="@+id/mainFragment"
-        android:name="com.inhealion.generator.main.MainFragment"
-        android:label="MainFragment" >
-        <action
-            android:id="@+id/action_mainFragment_to_folderFragment"
-            app:destination="@id/folderFragment" />
+        android:name="com.inhealion.generator.presentation.programs.ProgramFragment"
+        android:label="ProgramFragment">
+        <argument
+            android:name="folder"
+            app:argType="com.inhealion.generator.networking.api.model.Folder"
+            app:nullable="false" />
     </fragment>
-    <fragment
-        android:id="@+id/discoveryFragment"
-        android:name="com.inhealion.generator.device.DiscoveryFragment"
-        android:label="DiscoveryFragment" />
 </navigation>

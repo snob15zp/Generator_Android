@@ -1,7 +1,6 @@
 package com.intelligt.modbus.jlibmodbus.serial
 
 import com.inhealion.generator.device.modbus.SerialPortBluetooth
-import com.intelligt.modbus.jlibmodbus.serial.SerialPortException
 import com.juul.kable.Characteristic
 
 class SerialPortFactoryBluetooth(

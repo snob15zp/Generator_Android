@@ -2,6 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="black_alpha_32">#32000000</color>
 
     <color name="colorPrimary">#1976d2</color>
     <color name="colorPrimaryDark">#115293</color>
@@ -10,5 +11,9 @@
 
     <color name="textColor">#1e1a1a</color>
     <color name="textError">@color/colorAccentDark</color>
+    <color name="secondaryTextColor">#45000000</color>
+    <color name="overlayBackground">@color/black_alpha_32</color>
+    <color name="color_divider">#3e000000</color>
+
 
 </resources>

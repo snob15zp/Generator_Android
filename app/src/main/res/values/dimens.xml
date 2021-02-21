@@ -6,5 +6,7 @@
 
 
     <dimen name="default_margin">16dp</dimen>
+    <dimen name="half_margin">8dp</dimen>
+    <dimen name="font_size_major">16sp</dimen>
 
 </resources>

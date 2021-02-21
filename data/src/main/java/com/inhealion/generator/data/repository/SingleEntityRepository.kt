@@ -7,10 +7,10 @@ import io.paperdb.Paper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-abstract class SingleEntityRepository<T> : CrudRepository<T> {
-    private val book: Book get() = Paper.book()
+abstract class SingleEntityRepository<T>(private val name: String) : CrudRepository<T> {
+    private val book: Book get() = Paper.book(name)
 
-    override suspend fun get(): Result<T> = withContext(Dispatchers.IO) {
+    override suspend fun get(): Result<T?> = withContext(Dispatchers.IO) {
         tryWithResult {
             book.read(KEY)
         }
@@ -20,6 +20,12 @@ abstract class SingleEntityRepository<T> : CrudRepository<T> {
         tryWithResult {
             book.write(KEY, entity)
             Unit
+        }
+    }
+
+    override suspend fun remove(): Result<Unit> = withContext(Dispatchers.IO) {
+        tryWithResult {
+            book.delete(KEY)
         }
     }
 

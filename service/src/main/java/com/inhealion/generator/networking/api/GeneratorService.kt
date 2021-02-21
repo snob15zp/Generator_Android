@@ -1,19 +1,12 @@
 package com.inhealion.generator.networking.api
 
-import com.inhealion.generator.networking.api.model.Folder
-import com.inhealion.generator.networking.api.model.Program
-import com.inhealion.generator.networking.api.model.User
+import com.inhealion.generator.networking.api.model.*
 import okhttp3.ResponseBody
-import retrofit2.http.Field
-import retrofit2.http.FormUrlEncoded
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
-import retrofit2.http.Streaming
+import retrofit2.http.*
 
 interface GeneratorService {
     @FormUrlEncoded
-    @POST("api/users/login")
+    @POST("/api/users/login")
     suspend fun login(@Field("login") login: String, @Field("password") password: String): User?
 
     @GET("/api/profiles/{id}/folders")
@@ -28,4 +21,10 @@ interface GeneratorService {
 
     @POST("/api/users/logout")
     suspend fun logout()
+
+    @GET("/api/users/{id}/profile")
+    suspend fun fetchUserProfile(@Path("id") userId: String): UserProfile?
+
+    @PUT("/api/users/refresh")
+    suspend fun refreshToken(): RefreshToken?
 }

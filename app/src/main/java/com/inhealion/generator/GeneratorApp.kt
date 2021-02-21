@@ -4,6 +4,7 @@ import android.app.Application
 import com.inhealion.generator.data.di.repositoryModule
 import com.inhealion.generator.di.appModule
 import com.inhealion.generator.di.serviceModule
+import com.inhealion.generator.di.utilsModule
 import com.inhealion.generator.di.viewModelModule
 import com.inhealion.generator.extension.initGeneratorApiClient
 import com.inhealion.generator.extension.initLogger
@@ -23,7 +24,8 @@ class GeneratorApp : Application() {
                 appModule,
                 serviceModule,
                 viewModelModule,
-                repositoryModule
+                repositoryModule,
+                utilsModule
             )
         }
 

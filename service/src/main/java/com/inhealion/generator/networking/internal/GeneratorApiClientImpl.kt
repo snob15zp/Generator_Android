@@ -42,7 +42,7 @@ internal class GeneratorApiClientImpl(
     private fun <T> sendRequest(callback: ApiCallback<T>, request: suspend () -> T?) {
         GlobalScope.launch(Dispatchers.IO) {
             try {
-                request()?.let { callback.success(it) } ?: callback.failure(ApiError.NotFound)
+                request()?.let { callback.success(it) } ?: callback.failure(ApiError.ServerError(404, "Resource not found"))
             } catch (e: Exception) {
                 callback.failure(handleError(e))
             }
