@@ -4,5 +4,5 @@ import com.inhealion.generator.service.AuthorizationManager
 import org.koin.dsl.module
 
 val appModule = module {
-    single { AuthorizationManager(get(), get()) }
+    single { AuthorizationManager(get(), get(), get()) }
 }

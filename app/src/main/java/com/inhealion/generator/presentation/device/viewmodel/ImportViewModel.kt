@@ -1,21 +1,17 @@
 package com.inhealion.generator.presentation.device.viewmodel
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.lifecyle.ActionLiveData
-import com.inhealion.generator.model.State
 import com.inhealion.generator.presentation.device.ImportAction
+import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
 import kotlinx.coroutines.runBlocking
 
 class ImportViewModel(
     val importAction: ImportAction,
     private val deviceRepository: DeviceRepository
-) : ViewModel() {
+) : BaseViewModel<Nothing>() {
 
     val showDiscovery = ActionLiveData()
-    val state = MutableLiveData<State>()
-
 
     fun import() {
         val device = runBlocking { deviceRepository.get() }.valueOrNull()

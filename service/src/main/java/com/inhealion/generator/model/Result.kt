@@ -24,10 +24,21 @@ sealed class Result<out T> {
 }
 
 inline fun <T, R> Result<T>.mapSuccess(action: (T) -> Result<R>): Result<R> =
-    when (this){
+    when (this) {
         is Result.Success<T> -> action.invoke(this.value)
         is Result.Failure<T> -> Result.failure(this.exception)
     }
+
+inline fun <T, R> Result<T>.map(action: (value: T) -> R): Result<R> {
+    return when (this) {
+        is Result.Success -> Result.success(
+            action(value)
+        )
+        is Result.Failure -> Result.failure(
+            exception
+        )
+    }
+}
 
 
 inline fun <T> Result<T>.onFailure(action: (exception: Throwable) -> Unit): Result<T> {

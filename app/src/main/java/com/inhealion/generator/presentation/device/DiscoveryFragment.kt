@@ -78,16 +78,16 @@ class DiscoveryFragment : BaseFragment<DiscoveryFragmentBinding>() {
         checkPermissions()
     }
 
-    private fun switchToState(state: State) {
+    private fun switchToState(state: State<List<BleDevice>>) {
         when (state) {
             is State.Failure -> Toast.makeText(requireContext(), state.error, Toast.LENGTH_LONG).show()
-            is State.Success<*> -> adapter.submitList((state.data as List<BleDevice>).map {
+            is State.Success -> adapter.submitList((state.data).map {
                 DeviceUiModel(
                     it.name ?: "<Unknown>", it.address
                 )
             })
-            State.Idle -> Unit
             State.InProgress -> binding.progressBar.isVisible = true
+            else -> Unit
         }
     }
 

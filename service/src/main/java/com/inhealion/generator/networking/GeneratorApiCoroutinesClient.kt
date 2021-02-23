@@ -7,21 +7,22 @@ import com.inhealion.generator.networking.api.model.Program
 import com.inhealion.generator.networking.api.model.User
 import com.inhealion.generator.networking.api.model.UserProfile
 import com.inhealion.generator.networking.internal.GeneratorApiCoroutinesClientImpl
+import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 
 interface GeneratorApiCoroutinesClient {
 
-    suspend fun signIn(login: String, password: String): Result<User>
+    suspend fun signIn(login: String, password: String): Flow<User>
 
-    suspend fun fetchFolders(userProfileId: String): Result<List<Folder>>
+    suspend fun fetchFolders(userProfileId: String): Flow<List<Folder>>
 
-    suspend fun fetchPrograms(folderId: String): Result<List<Program>>
+    suspend fun fetchPrograms(folderId: String): Flow<List<Program>>
 
-    suspend fun downloadFolder(folderId: String): Result<InputStream?>
+    suspend fun downloadFolder(folderId: String): Flow<InputStream?>
 
-    suspend fun logout(): Result<Unit>
+    suspend fun logout(): Flow<Unit>
 
-    suspend fun fetchUserProfile(userId: String): Result<UserProfile>
+    suspend fun fetchUserProfile(userId: String): Flow<UserProfile>
 
     companion object {
         private var instance: GeneratorApiCoroutinesClient? = null

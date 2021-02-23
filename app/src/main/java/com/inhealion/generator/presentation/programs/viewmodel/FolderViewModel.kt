@@ -1,55 +1,44 @@
 package com.inhealion.generator.presentation.programs.viewmodel
 
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.data.repository.UserRepository
 import com.inhealion.generator.model.*
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.networking.api.model.Folder
 import com.inhealion.generator.networking.api.model.UserProfile
-import com.inhealion.generator.networking.ApiError
-import com.inhealion.generator.networking.account.AccountStore
-import com.inhealion.generator.presentation.main.BaseAuthViewModel
+import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
 import com.inhealion.generator.utils.ApiErrorHandler
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class FolderViewModel(
-    accountStore: AccountStore,
     private val userRepository: UserRepository,
     private val generatorApiCoroutinesClient: GeneratorApiCoroutinesClient,
     private val apiErrorHandler: ApiErrorHandler
-) : BaseAuthViewModel(accountStore, userRepository) {
+) : BaseViewModel<Pair<UserProfile, List<Folder>>>() {
 
-    val userProfile = MutableLiveData<UserProfile>()
-    val folders = MutableLiveData<List<Folder>>()
-
+    private var folders: List<Folder>? = null
 
     fun load() {
-        if (!verifyAuthorization()) {
-            return
-        }
-
         viewModelScope.launch {
             state.postValue(State.InProgress)
 
-            val user = userRepository.get().valueOrNull() ?: return@launch
+            val user = userRepository.get().valueOrNull() ?: run {
+                state.value = State.Unauthorized
+                return@launch
+            }
             generatorApiCoroutinesClient.fetchUserProfile(user.id!!)
-                .mapSuccess {
-                    userProfile.postValue(it)
-                    generatorApiCoroutinesClient.fetchFolders(it.id)
+                .flatMapConcat { userProfile ->
+                    generatorApiCoroutinesClient.fetchFolders(userProfile.id).map { userProfile to it }
                 }
-                .onSuccess {
-                    folders.postValue(it)
-                    state.postValue(State.success())
-                }
-                .onFailure {
-                    if (it is ApiError.Unauthorized) {
-                        verifyAuthorization()
-                    } else {
-                        state.postValue(State.Failure(apiErrorHandler.getErrorMessage(it)))
-                    }
+                .catch { state.postValue(State.apiError(it, apiErrorHandler)) }
+                .collect {
+                    folders = it.second
+                    state.postValue(State.Success(it))
                 }
         }
     }
+
+    fun getFolder(id: String) = folders?.firstOrNull { it.id == id }
 }
 

@@ -11,6 +11,8 @@ import com.inhealion.generator.databinding.FolderFragmentBinding
 import com.inhealion.generator.extension.setTextOrHide
 import com.inhealion.generator.utils.StringProvider
 import com.inhealion.generator.model.State
+import com.inhealion.generator.networking.api.model.Folder
+import com.inhealion.generator.networking.api.model.User
 import com.inhealion.generator.networking.api.model.UserProfile
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.programs.adapter.FolderAdapter
@@ -35,32 +37,19 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
         binding.foldersRecyclerView.adapter = folderAdapter
 
         with(viewModel) {
-            showLoginForm.observe(viewLifecycleOwner) { findNavController().navigate(R.id.loginFragment) }
-            userProfile.observe(viewLifecycleOwner) { bindUserProfile(it) }
             state.observe(viewLifecycleOwner) { switchState(it) }
-            folders.observe(viewLifecycleOwner) { folders ->
-                folderAdapter.submitList(folders.map {
-                    FolderUiModel(
-                        it.id,
-                        it.name,
-                        it.expiredAt,
-                        stringProvider.getRelativeTimeSpanString(it.expiredAt.time),
-                        it.isExpired
-                    )
-                }.sortedBy { it.expiredAt.time })
-            }
             load()
         }
     }
 
     private fun onFolderSelected(id: String) {
-        val folder = viewModel.folders.value?.find { it.id == id } ?: return
+        val folder = viewModel.getFolder(id) ?: return
         findNavController().navigate(
             FolderFragmentDirections.actionFolderFragmentToProgramFragment(folder)
         )
     }
 
-    private fun switchState(state: State) = with(binding) {
+    private fun switchState(state: State<Pair<UserProfile, List<Folder>>>) = with(binding) {
         when (state) {
             State.Idle -> {
                 showUserProfileControls(false)
@@ -72,9 +61,10 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = true
             }
-            is State.Success<*> -> {
+            is State.Success -> {
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = false
+                bind(state.data.first, state.data.second)
                 showUserProfileControls(true)
             }
             State.InProgress -> {
@@ -82,7 +72,21 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
                 errorOverlay.root.isVisible = false
                 showUserProfileControls(false)
             }
+            State.Unauthorized -> back()
         }
+    }
+
+    private fun bind(userProfile: UserProfile, folders: List<Folder>) {
+        bindUserProfile(userProfile)
+        folderAdapter.submitList(folders.map {
+            FolderUiModel(
+                it.id,
+                it.name,
+                it.expiredAt,
+                stringProvider.getRelativeTimeSpanString(it.expiredAt.time),
+                it.isExpired
+            )
+        }.sortedBy { it.expiredAt.time })
     }
 
     private fun showUserProfileControls(show: Boolean) = with(binding) {

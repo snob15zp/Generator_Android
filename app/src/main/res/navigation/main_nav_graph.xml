@@ -2,12 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main_nav_graph"
-    app:startDestination="@id/folderFragment">
-
-    <fragment
-        android:id="@+id/loginFragment"
-        android:name="com.inhealion.generator.presentation.login.LoginFragment"
-        android:label="LoginFragment" />
+    app:startDestination="@id/mainFragment">
 
     <fragment
         android:id="@+id/folderFragment"
@@ -25,5 +20,13 @@
             android:name="folder"
             app:argType="com.inhealion.generator.networking.api.model.Folder"
             app:nullable="false" />
+    </fragment>
+    <fragment
+        android:id="@+id/mainFragment"
+        android:name="com.inhealion.generator.presentation.main.MainFragment"
+        android:label="MainFragment" >
+        <action
+            android:id="@+id/action_mainFragment_to_folderFragment"
+            app:destination="@id/folderFragment" />
     </fragment>
 </navigation>

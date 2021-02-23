@@ -65,7 +65,7 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
         toolbar.setNavigationOnClickListener { back() }
     }
 
-    private fun switchState(state: State) = with(binding) {
+    private fun switchState(state: State<List<Program>>) = with(binding) {
         when (state) {
             State.Idle -> {
                 loadingOverlay.root.isVisible = false
@@ -76,8 +76,8 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = true
             }
-            is State.Success<*> -> {
-                adapter.submitList((state.data as List<Program>).map { ProgramUiModel(it.id, it.name) })
+            is State.Success -> {
+                adapter.submitList((state.data).map { ProgramUiModel(it.id, it.name) })
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = false
             }
@@ -85,6 +85,7 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
                 loadingOverlay.root.isVisible = true
                 errorOverlay.root.isVisible = false
             }
+            State.Unauthorized -> back()
         }
     }
 }

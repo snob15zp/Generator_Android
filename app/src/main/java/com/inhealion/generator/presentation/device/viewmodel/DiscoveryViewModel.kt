@@ -1,7 +1,5 @@
 package com.inhealion.generator.presentation.device.viewmodel
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.device.bluetooth.BleDeviceScanner
@@ -11,6 +9,7 @@ import com.inhealion.generator.model.State
 import com.inhealion.generator.model.onFailure
 import com.inhealion.generator.model.onSuccess
 import com.inhealion.generator.presentation.device.adapter.DeviceUiModel
+import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -19,9 +18,8 @@ import kotlinx.coroutines.launch
 class DiscoveryViewModel(
     private val scanner: BleDeviceScanner,
     private val deviceRepository: DeviceRepository
-) : ViewModel() {
+) : BaseViewModel<List<BleDevice>>() {
 
-    val state = MutableLiveData<State>()
     val finish = ActionLiveData()
 
     private val list = mutableListOf<BleDevice>()

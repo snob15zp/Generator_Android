@@ -38,12 +38,13 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         viewModel.import()
     }
 
-    private fun switchState(state: State) {
+    private fun switchState(state: State<Nothing>) {
         when (state) {
-            is State.Success<*> -> Unit
+            is State.Success -> Unit
             is State.Failure -> Unit
             State.Idle -> Unit
             State.InProgress -> Unit
+            else -> Unit
         }
     }
 }
