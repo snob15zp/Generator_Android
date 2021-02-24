@@ -26,6 +26,11 @@
     <string name="settins_devce_not_connected">Not connected</string>
     <string name="available_devices">Available devices</string>
     <string name="settings_account">Account</string>
+    <string name="dialog_button_ok">OK</string>
+    <string name="error_dialog_title">Error</string>
+    <string name="connection_error_title">Connection error.</string>
+    <string name="connection_error_message">Unable to connect to the device</string>
+    <string name="device_unknown">Unknown</string>
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>
         <item quantity="other">Expires in %d months</item>

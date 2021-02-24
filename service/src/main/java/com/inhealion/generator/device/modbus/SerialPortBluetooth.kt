@@ -15,6 +15,7 @@ import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
+import java.lang.Exception
 import java.nio.ByteBuffer
 
 @ExperimentalCoroutinesApi
@@ -57,7 +58,7 @@ class SerialPortBluetooth(
     override fun open() {
         val bluetoothDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(serialParameters.device)
         peripheral = scope.peripheral(bluetoothDevice)
-        connectionJob = scope.launch {
+        connectionJob = scope.launch(Dispatchers.IO) {
             peripheral?.run {
                 connect()
                 launch { connectionStateHandler(this@run) }
@@ -70,12 +71,16 @@ class SerialPortBluetooth(
         println("TTT > connected")
     }
 
-    private suspend fun observeCharacteristicNotifications(peripheral: Peripheral) =
-        peripheral.observe(writeCharacteristic).collect {
+    private suspend fun observeCharacteristicNotifications(peripheral: Peripheral) = try {
+        peripheral.observe(readCharacteristic).collect {
             println("TTT > read data from read characteristics: ${it.toByteString()}")
             notificationInputStream = ByteArrayInputStream(it)
             this@SerialPortBluetooth.stateFlow.emit(DeviceState.READ)
         }
+    } catch (e: Exception) {
+        Timber.e(e, "Unable to observe notification")
+        close()
+    }
 
     private suspend fun operationHandler(peripheral: Peripheral) = operationChannel.consumeEach {
         when (it) {
