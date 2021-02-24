@@ -5,24 +5,25 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.finishAffinity
-import androidx.core.view.isVisible
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.inhealion.generator.R
-import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.presentation.activity.ImportActivity
 import com.inhealion.generator.presentation.activity.MainActivity
+import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
 import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.device.ImportFragmentArgs
+import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.service.AuthorizationManager
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.DiscoveryDialogListener {
 
     private val authorizationManager: AuthorizationManager by inject()
     private val viewModel: SettingsViewModel by viewModel()
@@ -57,8 +58,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 authorizationManager.logout()
                 finishAffinity(requireActivity())
                 startActivity(
-                    Intent(requireActivity(), MainActivity::class.java),
-                    ActivityOptions.makeSceneTransitionAnimation(requireActivity()).toBundle()
+                    Intent(requireContext().applicationContext, MainActivity::class.java),
+                    null
                 )
             }
             true
@@ -90,6 +91,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
         viewModel.loadUserInfo()
     }
 
+    override fun onResult(isDeviceSelected: Boolean) {
+        viewModel.loadDeviceInfo()
+    }
+
     private fun setupToolbar() {
         requireActivity().findViewById<Toolbar>(R.id.toolbar).apply {
             title = context.getString(R.string.settings_title)
@@ -100,6 +105,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun showDiscoveryDevices() {
-        findNavController().navigate(R.id.settingsDiscoveryFragment)
+        DiscoveryDialogFragment.show(parentFragmentManager, this)
     }
 }

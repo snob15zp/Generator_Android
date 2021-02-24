@@ -21,10 +21,10 @@ class GenG070V1(address: String) : Generator {
     override var ready: Boolean = false
         private set
 
-    override var version: String = ""
+    override var version: String? = null
         private set
 
-    override var serial: ByteArray = ByteArray(0)
+    override var serial: ByteArray? = null
         private set
 
 
@@ -52,15 +52,20 @@ class GenG070V1(address: String) : Generator {
         try {
             println("TTT > connect")
             modbusMasterRTU.connect()
-            try {
-                println("TTT > fake read for initialize modbus on the device")
-                modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, 0, 1)
-            } catch (e: Exception) {
-                //Ignore exception
+            (1..3).forEach {
+                try {
+                    println("TTT > read version $it")
+                    val versionData = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
+                    this.version = "${versionData[0]}.${versionData[1]}.${versionData[2]}"
+                    return@forEach
+                } catch (e: Exception) {
+                    //Ignore exception
+                }
             }
-            println("TTT > read version")
-            val versionData = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
-            this.version = "${versionData[0]}.${versionData[1]}.${versionData[2]}"
+            if (this.version == null) {
+                return false
+            }
+
             println("TTT > read serial")
             serial = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, SERIAL_REGISTER_ADDR, 6)
                 .map { it.toByte() }
@@ -69,10 +74,9 @@ class GenG070V1(address: String) : Generator {
             return true
         } catch (e: Exception) {
             Timber.e(e, "Unable to init device")
+            close()
             ready = false
             return false
-        } finally {
-            close()
         }
     }
 

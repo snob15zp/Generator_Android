@@ -10,6 +10,7 @@ import com.inhealion.generator.model.onFailure
 import com.inhealion.generator.model.onSuccess
 import com.inhealion.generator.presentation.device.adapter.DeviceUiModel
 import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -22,24 +23,32 @@ class DiscoveryViewModel(
 
     val finish = ActionLiveData()
 
+    var isDeviceSelected = false
+        private set
+
     private val list = mutableListOf<BleDevice>()
 
     fun start() {
         state.postValue(State.InProgress)
         list.clear()
+        isDeviceSelected = false
 
-        scanner.scan()
-            .onEach {
-                if (!list.contains(it)) list.add(it)
-                state.postValue(State.Success(list))
-            }
-            .launchIn(viewModelScope)
+        viewModelScope.launch {
+            scanner.scan()
+                .onEach {
+                    if (!list.contains(it)) list.add(it)
+                    state.postValue(State.Success(list))
+                }.launchIn(viewModelScope)
+        }
     }
 
     fun saveDevice(device: DeviceUiModel) {
         viewModelScope.launch {
             deviceRepository.save(BleDevice(device.name, device.address))
-                .onSuccess { finish.sendAction() }
+                .onSuccess {
+                    isDeviceSelected = true
+                    finish.sendAction()
+                }
                 .onFailure { state.postValue(State.Failure(it.message!!)) }
         }
     }

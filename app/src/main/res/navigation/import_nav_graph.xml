@@ -18,6 +18,6 @@
     </fragment>
     <fragment
         android:id="@+id/discoveryFragment"
-        android:name="com.inhealion.generator.presentation.device.DiscoveryFragment"
+        android:name="com.inhealion.generator.presentation.device.DiscoveryDialogFragment"
         android:label="DiscoveryFragment" />
 </navigation>

@@ -5,7 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <include layout="@layout/toolbar_layout" android:id="@+id/toolbar"/>
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar_layout" />
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/nameTextView"
@@ -43,10 +45,12 @@
         android:fontFamily="@font/roboto_regular"
         android:textColor="@color/textColor"
         android:textSize="@dimen/font_size_normal"
+        android:visibility="invisible"
         app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@+id/guidelineStart"
         app:layout_constraintTop_toBottomOf="@+id/birthdayTextView"
-        tools:text="(310) 123-23-123" />
+        tools:text="(310) 123-23-123"
+        tools:visibility="visible" />
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/emailTextView"
@@ -58,10 +62,12 @@
         android:fontFamily="@font/roboto_regular"
         android:textColor="@color/textColor"
         android:textSize="@dimen/font_size_normal"
+        android:visibility="invisible"
         app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@+id/guidelineStart"
         app:layout_constraintTop_toBottomOf="@+id/phoneTextView"
-        tools:text="john@mail.test" />
+        tools:text="john@mail.test"
+        tools:visibility="visible" />
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/addressTextView"
@@ -74,16 +80,20 @@
         android:maxLines="3"
         android:textColor="@color/textColor"
         android:textSize="@dimen/font_size_normal"
+        android:visibility="invisible"
         app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@+id/guidelineStart"
         app:layout_constraintTop_toBottomOf="@+id/emailTextView"
-        tools:text="7434 Erika Squares West Harold, NV 17096" />
+        tools:text="7434 Erika Squares West Harold, NV 17096"
+        tools:visibility="visible" />
 
     <View
         android:id="@+id/item_divider"
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginTop="@dimen/default_margin"
+        android:visibility="invisible"
+        tools:visibility="visible"
         android:background="@color/color_divider"
         app:layout_constraintEnd_toEndOf="@id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@id/guidelineStart"

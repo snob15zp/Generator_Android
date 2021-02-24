@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.FolderFragmentBinding
@@ -18,6 +19,8 @@ import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.programs.adapter.FolderAdapter
 import com.inhealion.generator.presentation.programs.adapter.FolderUiModel
 import com.inhealion.generator.presentation.programs.viewmodel.FolderViewModel
+import com.inhealion.generator.service.AuthorizationManager
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -29,6 +32,7 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
     private val stringProvider: StringProvider by inject()
 
     private val folderAdapter: FolderAdapter by lazy { FolderAdapter(::onFolderSelected) }
+    private val authorizationManager: AuthorizationManager by inject()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -64,6 +68,7 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
             is State.Success -> {
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = false
+                itemDivider.isVisible = true
                 bind(state.data.first, state.data.second)
                 showUserProfileControls(true)
             }
@@ -72,7 +77,9 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
                 errorOverlay.root.isVisible = false
                 showUserProfileControls(false)
             }
-            State.Unauthorized -> back()
+            State.Unauthorized -> lifecycleScope.launch {
+                authorizationManager.logout()
+            }
         }
     }
 

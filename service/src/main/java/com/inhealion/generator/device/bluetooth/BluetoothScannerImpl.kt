@@ -9,7 +9,7 @@ import timber.log.Timber
 
 class BluetoothScannerImpl : BleDeviceScanner {
 
-    override fun scan(): Flow<BleDevice> =
+    override suspend fun scan(): Flow<BleDevice> =
         Scanner()
             .advertisements
             .map {

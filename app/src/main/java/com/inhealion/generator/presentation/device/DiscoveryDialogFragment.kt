@@ -1,6 +1,7 @@
 package com.inhealion.generator.presentation.device
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -11,7 +12,10 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.DiscoveryFragmentBinding
 import com.inhealion.generator.device.model.BleDevice
@@ -19,7 +23,11 @@ import com.inhealion.generator.model.State
 import com.inhealion.generator.presentation.device.adapter.DeviceUiModel
 import com.inhealion.generator.presentation.device.adapter.DiscoveryDeviceAdapter
 import com.inhealion.generator.presentation.device.viewmodel.DiscoveryViewModel
+import com.inhealion.generator.presentation.login.LoginDialogFragment
 import com.inhealion.generator.presentation.main.BaseFragment
+import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
+import com.inhealion.generator.presentation.main.FullscreenDialogFragment
+import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionDeniedResponse
@@ -29,7 +37,7 @@ import com.karumi.dexter.listener.single.PermissionListener
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
-class DiscoveryFragment : BaseFragment<DiscoveryFragmentBinding>() {
+class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBinding>() {
     override val bindingInflater: (LayoutInflater, ViewGroup?) -> DiscoveryFragmentBinding
         get() = { inflater, parent -> DiscoveryFragmentBinding.inflate(inflater, parent, false) }
 
@@ -54,28 +62,33 @@ class DiscoveryFragment : BaseFragment<DiscoveryFragmentBinding>() {
         }
     }
 
-    override fun setupToolbar(toolbar: Toolbar) {
-        super.setupToolbar(toolbar)
-        with(toolbar) {
-            title = context.getString(R.string.discovery_title)
-            menu.findItem(R.id.menu_info_action).isVisible = false
-            setNavigationIcon(R.drawable.ic_baseline_arrow_back_24)
-            setNavigationOnClickListener { back() }
-        }
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.devicesRecyclerView.adapter = adapter
 
+        binding.closeImage.setOnClickListener { dismiss() }
         binding.grantAccessButton.setOnClickListener { gotoSettings() }
 
         viewModel.apply {
             state.observe(viewLifecycleOwner) { switchToState(it) }
-            finish.observe(viewLifecycleOwner) { back() }
+            finish.observe(viewLifecycleOwner) { dismiss() }
         }
 
         checkPermissions()
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        setResult()
+        super.onDismiss(dialog)
+    }
+
+    private fun setResult() {
+        parentFragmentManager.setFragmentResult(
+            CONNECT_REQUEST_KEY,
+            bundleOf(RESULT_KEY to viewModel.isDeviceSelected)
+        )
+        // TODO for compatibility with old fragmentManager
+        (targetFragment as? DiscoveryDialogListener)?.onResult(viewModel.isDeviceSelected)
     }
 
     private fun switchToState(state: State<List<BleDevice>>) {
@@ -111,4 +124,18 @@ class DiscoveryFragment : BaseFragment<DiscoveryFragmentBinding>() {
         viewModel.saveDevice(device)
     }
 
+    companion object {
+        fun show(fragmentManager: FragmentManager, target: Fragment? = null) {
+            target?.let { require(it is DiscoveryDialogListener) }
+            DiscoveryDialogFragment()
+                .apply {
+                    setTargetFragment(target, -1)
+                }
+                .show(fragmentManager, "DiscoveryDialogFragment")
+        }
+    }
+
+    interface DiscoveryDialogListener {
+        fun onResult(isDeviceSelected: Boolean)
+    }
 }

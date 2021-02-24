@@ -13,12 +13,12 @@ interface Generator: Closeable {
     /**
      *  Версия устройства
      **/
-    val version: String
+    val version: String?
 
     /**
      *  Серийный номер
      **/
-    val serial: ByteArray
+    val serial: ByteArray?
 
     /**
      *  Пробует про-инициализироваьт устройство

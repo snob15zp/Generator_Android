@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.inhealion.generator">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -18,7 +19,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Generator"
         android:usesCleartextTraffic="true">
-        <activity android:name="com.inhealion.generator.presentation.activity.MainActivity">
+        <activity
+            android:name="com.inhealion.generator.presentation.activity.MainActivity"
+            android:configChanges="orientation"
+            tools:ignore="LockedOrientationActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -26,9 +31,11 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".presentation.activity.SettingsActivity" />
+        <activity
+            android:name=".presentation.activity.SettingsActivity" />
 
-        <activity android:name=".presentation.activity.ImportActivity" />
+        <activity
+            android:name=".presentation.activity.ImportActivity" />
 
     </application>
 

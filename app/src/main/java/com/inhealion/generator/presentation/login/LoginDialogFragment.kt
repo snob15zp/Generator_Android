@@ -19,19 +19,17 @@ import com.inhealion.generator.extension.hideKeyboard
 import com.inhealion.generator.extension.requireString
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.api.model.User
+import com.inhealion.generator.presentation.main.FullscreenDialogFragment
 import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class LoginDialogFragment : DialogFragment() {
+class LoginDialogFragment : FullscreenDialogFragment<LoginFragmentBinding>() {
+
+    override val bindingInflater: (LayoutInflater, ViewGroup?) -> LoginFragmentBinding
+        get() = { inflater, container -> LoginFragmentBinding.inflate(inflater, container, false) }
+
     private val viewModel: LoginViewModel by viewModel()
-
-    private lateinit var binding: LoginFragmentBinding
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        binding = LoginFragmentBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -44,24 +42,6 @@ class LoginDialogFragment : DialogFragment() {
             viewModel.signIn(
                 binding.loginText.requireString(),
                 binding.passwordText.requireString()
-            )
-        }
-    }
-
-    override fun onCreateDialog(savedInstanceState: Bundle?) = Dialog(requireActivity()).apply {
-        // creating the fullscreen dialog
-        requestWindowFeature(Window.FEATURE_NO_TITLE)
-        setContentView(RelativeLayout(activity).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        })
-        window?.let {
-            it.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            it.setLayout(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
             )
         }
     }
