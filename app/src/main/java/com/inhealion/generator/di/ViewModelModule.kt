@@ -17,7 +17,7 @@ val viewModelModule = module {
     viewModel { LoginViewModel(get(), get()) }
     viewModel { FolderViewModel(get(), get(), get()) }
     viewModel { (folder: Folder) -> ProgramsViewModel(folder, get(), get()) }
-    viewModel { (importAction: ImportAction) -> ImportViewModel(importAction, get(), get(), get(), get()) }
+    viewModel { (importAction: ImportAction) -> ImportViewModel(importAction, get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get()) }
     viewModel { MainViewModel(get(), get(), get()) }
 }
