@@ -15,7 +15,7 @@ import org.koin.dsl.module
 val serviceModule = module {
     single<AccountStore> { SharedPrefAccountStore(androidContext()) }
     single {
-        GeneratorApiCoroutinesClient.initialize(BASE_URL, get())
+        GeneratorApiCoroutinesClient.initialize(BASE_URL, androidContext(), get())
         GeneratorApiCoroutinesClient.instance()
     }
     factory<BleDeviceScanner> { BluetoothScannerImpl() }

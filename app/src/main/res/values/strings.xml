@@ -34,6 +34,7 @@
     <string name="action_connectiong">Connecting...</string>
     <string name="action_download">Download...</string>
     <string name="persent_value">%1$d%%</string>
+    <string name="download_folder_error">Unable to download folder.</string>
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>
         <item quantity="other">Expires in %d months</item>

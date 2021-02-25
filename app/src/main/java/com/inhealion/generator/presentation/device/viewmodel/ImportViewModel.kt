@@ -2,6 +2,7 @@ package com.inhealion.generator.presentation.device.viewmodel
 
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.R
 import com.inhealion.generator.data.repository.DeviceRepository
@@ -10,27 +11,31 @@ import com.inhealion.generator.device.Generator
 import com.inhealion.generator.lifecyle.ActionLiveData
 import com.inhealion.generator.model.ErrorDialogData
 import com.inhealion.generator.model.State
+import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
+import com.inhealion.generator.utils.ApiErrorStringProvider
 import com.inhealion.generator.utils.StringProvider
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.IOException
 import java.lang.Exception
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
+import kotlin.io.path.Path
 
 class ImportViewModel(
     val importAction: ImportAction,
     private val deviceRepository: DeviceRepository,
     private val api: GeneratorApiCoroutinesClient,
     private val connectionFactory: DeviceConnectionFactory,
-    private val stringProvider: StringProvider
+    private val stringProvider: StringProvider,
+    private val apiErrorStringProvider: ApiErrorStringProvider
 ) : BaseViewModel<Nothing>() {
 
     val showDiscovery = ActionLiveData()
@@ -45,44 +50,38 @@ class ImportViewModel(
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            currentAction.postValue(stringProvider.getString(R.string.action_connectiong))
-
+            currentAction.postValue(stringProvider.getString(R.string.action_download))
             state.postValue(State.InProgress)
+            val files = try {
+                when (importAction) {
+                    is ImportAction.ImportFolder -> importFolder(importAction.folderId)
+                    ImportAction.UpdateFirmware -> emptyMap()
+                }
+            } catch (e: ApiError) {
+                state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(e)))
+                return@launch
+            } catch (e: Exception) {
+                state.postValue(State.Failure(stringProvider.getString(R.string.download_folder_error)))
+                return@launch
+            }
+
             try {
+                currentAction.postValue(stringProvider.getString(R.string.action_connectiong))
                 connectionFactory.connect(device.address).use { generator ->
                     currentAction.postValue(stringProvider.getString(R.string.action_download))
-
-                    val files = mutableMapOf<String, ByteArray>()
-                    when (importAction) {
-                        is ImportAction.ImportFolder -> {
-                            val inputStream = api.downloadFolder(importAction.folderId).firstOrNull() ?: return@launch
-
-                            ZipInputStream(inputStream).use { zipInputStream ->
-                                var zipEntry: ZipEntry? = zipInputStream.nextEntry
-                                while (zipEntry != null) {
-
-                                    files[zipEntry.name] = zipInputStream.readBytes()
-                                    zipInputStream.closeEntry()
-
-                                    zipEntry = zipInputStream.nextEntry
-                                }
-                            }
-
-                            files.filter { it.key.endsWith(".txt") }
-                                .forEach { generator.putFile(it.key, ByteArrayInputStream(it.value)) }
-
-                            files.filter { it.key.endsWith(".pls") }
-                                .forEach { generator.putFile(it.key, ByteArrayInputStream(it.value)) }
-
-                        }
-                        ImportAction.UpdateFirmware -> Unit
-                    }
                 }
-            } catch (e: Throwable) {
+            } catch (e: Exception) {
                 Timber.e(e, "Unable to import data")
                 val deviceName = device.name ?: stringProvider.getString(R.string.device_unknown)
                 state.postValue(State.Failure(stringProvider.getString(R.string.connection_error_message, deviceName)))
             }
         }
+    }
+
+    private suspend fun importFolder(folderId: String): Map<String, ByteArray> {
+        val files = mutableMapOf<String, ByteArray>()
+        val path = api.downloadFolder(folderId).firstOrNull() ?: return emptyMap()
+        File(path).listFiles()?.forEach { files[it.name] = it.readBytes() }
+        return files
     }
 }

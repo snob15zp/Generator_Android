@@ -1,5 +1,6 @@
 package com.inhealion.generator.networking
 
+import android.content.Context
 import com.inhealion.generator.model.Result
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.api.model.Folder
@@ -18,7 +19,7 @@ interface GeneratorApiCoroutinesClient {
 
     suspend fun fetchPrograms(folderId: String): Flow<List<Program>>
 
-    suspend fun downloadFolder(folderId: String): Flow<InputStream?>
+    suspend fun downloadFolder(folderId: String): Flow<String>
 
     suspend fun logout(): Flow<Unit>
 
@@ -32,14 +33,14 @@ interface GeneratorApiCoroutinesClient {
             instance ?: throw IllegalStateException("Client not initialized yet")
 
         @JvmStatic
-        fun initialize(baseUrl: String, accountStore: AccountStore) {
-            instance = GeneratorApiCoroutinesClient(baseUrl, accountStore)
+        fun initialize(baseUrl: String, context: Context, accountStore: AccountStore) {
+            instance = GeneratorApiCoroutinesClient(baseUrl, context, accountStore)
         }
 
         @JvmStatic
         @JvmName("create")
-        operator fun invoke(baseUrl: String, accountStore: AccountStore): GeneratorApiCoroutinesClient {
-            return GeneratorApiCoroutinesClientImpl(baseUrl, accountStore)
+        operator fun invoke(baseUrl: String, context: Context, accountStore: AccountStore): GeneratorApiCoroutinesClient {
+            return GeneratorApiCoroutinesClientImpl(baseUrl, context, accountStore)
         }
     }
 }
