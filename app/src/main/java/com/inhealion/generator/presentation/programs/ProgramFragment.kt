@@ -85,7 +85,6 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
                 loadingOverlay.root.isVisible = true
                 errorOverlay.root.isVisible = false
             }
-            State.Unauthorized -> back()
         }
     }
 }

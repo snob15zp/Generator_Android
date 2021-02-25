@@ -1,13 +1,10 @@
 package com.inhealion.generator.presentation.settings
 
-import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.finishAffinity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -17,7 +14,6 @@ import com.inhealion.generator.presentation.activity.MainActivity
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
 import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.device.ImportFragmentArgs
-import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.service.AuthorizationManager
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -37,7 +33,7 @@ class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.Dis
         }
 
         findPreference<Preference>("device")?.apply {
-            summary = getString(R.string.settins_devce_not_connected)
+            summary = getString(R.string.settings_device_not_connected)
             setOnPreferenceClickListener {
                 showDiscoveryDevices()
                 true
@@ -56,11 +52,6 @@ class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.Dis
         findPreference<Preference>("logout")?.setOnPreferenceClickListener {
             lifecycleScope.launch {
                 authorizationManager.logout()
-                finishAffinity(requireActivity())
-                startActivity(
-                    Intent(requireContext().applicationContext, MainActivity::class.java),
-                    null
-                )
             }
             true
         }
@@ -77,7 +68,7 @@ class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.Dis
         viewModel.device.observe(viewLifecycleOwner) {
             findPreference<Preference>("device")?.apply {
                 title = it?.name ?: getString(R.string.settings_device)
-                summary = it?.address ?: getString(R.string.settins_devce_not_connected)
+                summary = it?.address ?: getString(R.string.settings_device_not_connected)
             }
         }
 

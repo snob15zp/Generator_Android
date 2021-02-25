@@ -1,12 +1,11 @@
 package com.inhealion.generator.model
 
 import com.inhealion.generator.networking.ApiError
-import com.inhealion.generator.utils.ApiErrorHandler
+import com.inhealion.generator.utils.ApiErrorStringProvider
 
 sealed class State<out T : Any> {
     data class Success<out T : Any>(val data: T) : State<T>()
     data class Failure(val error: String, val exception: Throwable? = null) : State<Nothing>()
-    object Unauthorized : State<Nothing>()
     object InProgress : State<Nothing>()
     object Idle : State<Nothing>()
 
@@ -14,11 +13,9 @@ sealed class State<out T : Any> {
 
         fun success(data: Any = Any()) = Success(data)
 
-        fun apiError(error: Throwable, apiErrorHandler: ApiErrorHandler) = when (error) {
-            is ApiError.Unauthorized -> Unauthorized
-            else -> Failure(apiErrorHandler.getErrorMessage(error), error)
+        fun apiError(error: Throwable, apiErrorStringProvider: ApiErrorStringProvider) = when (error) {
+            else -> Failure(apiErrorStringProvider.getErrorMessage(error), error)
         }
-
     }
 }
 

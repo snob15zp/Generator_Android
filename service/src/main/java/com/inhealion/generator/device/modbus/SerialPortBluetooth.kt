@@ -9,6 +9,9 @@ import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import okhttp3.internal.toHexString
 import okio.ByteString.Companion.toByteString
 import timber.log.Timber
@@ -17,6 +20,8 @@ import java.io.IOException
 import java.io.InputStream
 import java.lang.Exception
 import java.nio.ByteBuffer
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicInteger
 
 @ExperimentalCoroutinesApi
 class SerialPortBluetooth(
@@ -31,7 +36,11 @@ class SerialPortBluetooth(
     private val operationChannel = BroadcastChannel<Operation>(Channel.CONFLATED)
     private val stateFlow = MutableStateFlow(DeviceState.DISCONNECTED)
 
-    private var notificationInputStream: InputStream? = null
+    private val buffer = ByteBuffer.allocate(1024)
+    private var writePosition = AtomicInteger(0)
+    private var readPosition = 0
+
+    private val readMutex = Mutex()
 
     override fun write(b: Int) {
         operationChannel.offer(Operation.Write(ByteBuffer.allocate(1).put(b.toByte())))
@@ -72,10 +81,11 @@ class SerialPortBluetooth(
     }
 
     private suspend fun observeCharacteristicNotifications(peripheral: Peripheral) = try {
-        peripheral.observe(readCharacteristic).collect {
+        peripheral.observe(writeCharacteristic).collect {
             println("TTT > read data from read characteristics: ${it.toByteString()}")
-            notificationInputStream = ByteArrayInputStream(it)
-            this@SerialPortBluetooth.stateFlow.emit(DeviceState.READ)
+            buffer.put(it)
+            writePosition.addAndGet(it.size)
+            stateFlow.emit(DeviceState.READ)
         }
     } catch (e: Exception) {
         Timber.e(e, "Unable to observe notification")
@@ -87,35 +97,59 @@ class SerialPortBluetooth(
             is Operation.Write -> kotlin.runCatching {
                 println("TTT > write byte array ${it.data.array().toByteString()}")
                 peripheral.write(writeCharacteristic, it.data.array(), WriteType.WithoutResponse)
-                this@SerialPortBluetooth.stateFlow.emit(DeviceState.WRITE)
+                stateFlow.emit(DeviceState.WRITE)
             }
             else -> Unit
         }
     }
 
-    override fun read() = readInternal { it.read() }
-
-    override fun read(b: ByteArray, off: Int, len: Int) = readInternal { it.read(b, off, len) }
-
-    private fun readInternal(readAction: (InputStream) -> Int): Int {
-        println("TTT > start read from device")
+    override fun read(): Int {
         if (!isOpened) {
             throw IOException("Port not opened")
         }
-        if (notificationInputStream?.available() ?: 0 == 0) waitFor(DeviceState.READ)
-        notificationInputStream?.run {
-            val data = readAction(this)
-            println("TTT > read data ${data.toHexString()}")
-            if (data == END_OF_STREAM) {
-                this.close()
-                notificationInputStream = null
-                throw IOException("Read timeout")
-            }
-            return data
-        } ?: throw IOException("Read timeout")
+
+        if (writePosition.get() == 0) waitFor(DeviceState.READ)
+
+        val data = if (readPosition < writePosition.get()) {
+            buffer[readPosition++].toInt()
+        } else {
+            throw IOException("Read timeout")
+        }
+
+        clearReadBufferIfNeeded()
+        return data
+    }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int {
+        if (!isOpened) {
+            throw IOException("Port not opened")
+        }
+
+        if (writePosition.get() == 0) waitFor(DeviceState.READ)
+
+        if (readPosition < writePosition.get()) {
+            buffer.array().copyInto(b, off, readPosition, readPosition + len)
+            readPosition += len
+        } else {
+            throw IOException("Read timeout")
+        }
+        clearReadBufferIfNeeded()
+        return len
+    }
+
+
+    private fun clearReadBufferIfNeeded() {
+        if (readPosition == writePosition.get()) {
+            println("TTT > read end")
+            readPosition = 0
+            writePosition.set(0)
+            buffer.clear()
+        }
     }
 
     override fun close() {
+        buffer.clear()
+
         runBlocking {
             peripheral?.disconnect()
             peripheral = null
@@ -154,6 +188,7 @@ class SerialPortBluetooth(
     }
 
     companion object {
+        private const val READ_TIMEOUT = 5000L
         private const val END_OF_STREAM = -1
     }
 }

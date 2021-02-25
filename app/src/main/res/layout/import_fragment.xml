@@ -9,6 +9,10 @@
     android:focusable="true"
     android:translationZ="2dp">
 
+    <include
+        android:id="@+id/errorOverlay"
+        layout="@layout/error_layout"
+        android:visibility="gone" />
 
     <ImageView
         android:id="@+id/closeImage"
@@ -25,7 +29,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/default_margin"
-        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/progress_circular"
         app:layout_constraintEnd_toEndOf="@+id/progress_circular"
         app:layout_constraintStart_toStartOf="@+id/progress_circular"
@@ -50,7 +53,6 @@
         android:layout_height="wrap_content"
         android:textColor="@color/textColor"
         android:textSize="@dimen/font_size_major"
-        android:visibility="gone"
         app:fontFamily="@font/roboto_medium"
         app:layout_constraintBottom_toBottomOf="@+id/progress_circular"
         app:layout_constraintEnd_toEndOf="@+id/progress_circular"

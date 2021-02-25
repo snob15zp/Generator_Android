@@ -59,6 +59,7 @@ class GenG070V1(address: String) : Generator {
                     this.version = "${versionData[0]}.${versionData[1]}.${versionData[2]}"
                     return@forEach
                 } catch (e: Exception) {
+                    println("TTT > Error: unable to read version")
                     //Ignore exception
                 }
             }

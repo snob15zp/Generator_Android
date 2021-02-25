@@ -77,9 +77,6 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
                 errorOverlay.root.isVisible = false
                 showUserProfileControls(false)
             }
-            State.Unauthorized -> lifecycleScope.launch {
-                authorizationManager.logout()
-            }
         }
     }
 

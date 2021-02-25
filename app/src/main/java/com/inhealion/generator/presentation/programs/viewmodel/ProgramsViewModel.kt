@@ -6,7 +6,7 @@ import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.networking.api.model.Folder
 import com.inhealion.generator.networking.api.model.Program
 import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
-import com.inhealion.generator.utils.ApiErrorHandler
+import com.inhealion.generator.utils.ApiErrorStringProvider
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 class ProgramsViewModel(
     val folder: Folder,
     private val generatorApiCoroutinesClient: GeneratorApiCoroutinesClient,
-    private val apiErrorHandler: ApiErrorHandler
+    private val apiErrorStringProvider: ApiErrorStringProvider
 ) : BaseViewModel<List<Program>>() {
 
     fun load() {
@@ -22,7 +22,7 @@ class ProgramsViewModel(
             state.postValue(State.InProgress)
 
             generatorApiCoroutinesClient.fetchPrograms(folder.id)
-                .catch { state.postValue(State.apiError(it, apiErrorHandler)) }
+                .catch { state.postValue(State.apiError(it, apiErrorStringProvider)) }
                 .collect { state.postValue(State.Success(it)) }
         }
     }

@@ -1,7 +1,5 @@
 package com.inhealion.generator.networking.internal
 
-import com.inhealion.generator.model.Result
-import com.inhealion.generator.model.tryWithResult
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.networking.account.AccountStore
@@ -37,17 +35,21 @@ internal class GeneratorApiCoroutinesClientImpl(
 
     override suspend fun fetchUserProfile(userId: String) = sendRequest { service.fetchUserProfile(userId) }
 
-    private suspend fun <T> sendRequest(request: suspend () -> T?): Flow<T> = flow {
-        try {
-            request().also { refreshTokenAttempt.set(0) }
-                ?.let { emit(it) }
-                ?: throw ApiError.ServerError(404, "Resource not found")
-        } catch (e: Exception) {
-            if (refreshTokenIsNeeded(e)) emitAll(sendRequest(request))
+    private suspend fun <T> sendRequest(request: suspend () -> T?): Flow<T> {
+        return flow {
+            try {
+                request().also { refreshTokenAttempt.set(0) }
+                    ?.let { emit(it) }
+                    ?: throw ApiError.ServerError(404, "Resource not found")
+            } catch (e: Exception) {
+                if (refreshTokenIsNeeded(e)) {
+                    return@flow emitAll(sendRequest(request))
+                }
 
-            throw when (e) {
-                is ApiError -> e
-                else -> handleError(e)
+                throw when (e) {
+                    is ApiError -> e
+                    else -> handleError(e)
+                }
             }
         }
     }

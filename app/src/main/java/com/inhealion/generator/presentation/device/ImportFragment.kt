@@ -4,12 +4,17 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentResultListener
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportFragmentBinding
+import com.inhealion.generator.model.ErrorDialogData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.presentation.device.viewmodel.ImportViewModel
+import com.inhealion.generator.presentation.dialogs.ERROR_DIALOG_REQUEST_KEY
+import com.inhealion.generator.presentation.dialogs.ErrorDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
@@ -25,6 +30,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
     private val fragmentResultListener = FragmentResultListener { key, result ->
         when (key) {
             CONNECT_REQUEST_KEY -> handleConnectionResult(result)
+            ERROR_DIALOG_REQUEST_KEY -> back()
         }
     }
 
@@ -33,16 +39,31 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        childFragmentManager.setFragmentResultListener(CONNECT_REQUEST_KEY, viewLifecycleOwner, fragmentResultListener)
+        parentFragmentManager.setFragmentResultListener(CONNECT_REQUEST_KEY, viewLifecycleOwner, fragmentResultListener)
+        parentFragmentManager.setFragmentResultListener(
+            ERROR_DIALOG_REQUEST_KEY,
+            viewLifecycleOwner,
+            fragmentResultListener
+        )
 
         binding.cancelButton.setOnClickListener { back() }
         binding.closeImage.setOnClickListener { back() }
 
         with(viewModel) {
-            showDiscovery.observe(viewLifecycleOwner) { DiscoveryDialogFragment.show(childFragmentManager) }
+            showDiscovery.observe(viewLifecycleOwner) { DiscoveryDialogFragment.show(parentFragmentManager) }
             state.observe(viewLifecycleOwner) { switchState(it) }
+            currentAction.observe(viewLifecycleOwner) { binding.actionTextView.text = it }
+            currentProgress.observe(viewLifecycleOwner) { handleProgressChanged(it) }
 
             import()
+        }
+    }
+
+    private fun handleProgressChanged(progress: Int?) {
+        if (progress != null && progress > 0) {
+            binding.progressTextView.text = getString(R.string.persent_value, progress)
+        } else {
+            binding.progressTextView.text = null
         }
     }
 
@@ -57,10 +78,17 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
     private fun switchState(state: State<Nothing>) {
         when (state) {
             is State.Success -> Unit
-            is State.Failure -> Unit
+            is State.Failure -> {
+                binding.progressCircular.isVisible = false
+                ErrorDialog.show(
+                    parentFragmentManager,
+                    ErrorDialogData(getString(R.string.connection_error_title), state.error)
+                )
+            }
             State.Idle -> Unit
-            State.InProgress -> Unit
-            else -> Unit
+            State.InProgress -> {
+                binding.progressCircular.isVisible = true
+            }
         }
     }
 }
