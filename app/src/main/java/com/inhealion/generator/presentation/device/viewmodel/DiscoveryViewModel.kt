@@ -29,7 +29,7 @@ class DiscoveryViewModel(
     private val list = mutableListOf<BleDevice>()
 
     fun start() {
-        state.postValue(State.InProgress)
+        state.postValue(State.InProgress())
         list.clear()
         isDeviceSelected = false
 

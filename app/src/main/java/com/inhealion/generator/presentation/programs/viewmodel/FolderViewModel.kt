@@ -23,7 +23,7 @@ class FolderViewModel(
 
     fun load() {
         viewModelScope.launch {
-            state.postValue(State.InProgress)
+            state.postValue(State.InProgress())
 
             val user = userRepository.get().valueOrNull() ?: run {
                 state.postValue(State.Failure(stringResource(R.string.error_unknown)))

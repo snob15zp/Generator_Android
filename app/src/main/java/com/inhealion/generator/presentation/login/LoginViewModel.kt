@@ -17,7 +17,7 @@ class LoginViewModel(
 
     fun signIn(login: String, password: String) {
         viewModelScope.launch {
-            state.postValue(State.InProgress)
+            state.postValue(State.InProgress())
             authorizationManager.signIn(login, password)
                 .catch { state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(it))) }
                 .collect { state.postValue(State.Success(it)) }

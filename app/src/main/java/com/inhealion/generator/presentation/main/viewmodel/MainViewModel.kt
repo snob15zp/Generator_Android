@@ -1,11 +1,15 @@
 package com.inhealion.generator.presentation.main.viewmodel
 
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.data.repository.DeviceRepository
-import com.inhealion.generator.lifecyle.ActionLiveData
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.service.SharedPrefManager
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.internal.ChannelFlow
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -14,22 +18,24 @@ class MainViewModel(
     private val sharedPrefManager: SharedPrefManager
 ) : ViewModel() {
 
-    val showLogin = ActionLiveData()
-    val showDeviceConnection = ActionLiveData()
-    val showFolders = ActionLiveData()
+    val action = MutableLiveData<Action>()
 
-    val isUserAuthorized = accountStore.load() != null
-
-    fun navigate() {
-        viewModelScope.launch {
-            when {
-                accountStore.load() == null -> showLogin.sendAction()
-                (deviceRepository.get().valueOrNull() == null && !sharedPrefManager.isDiscoveryWasShown) -> {
-                    showDeviceConnection.sendAction()
-                    sharedPrefManager.isDiscoveryWasShown = true
-                }
-                else -> showFolders.sendAction()
+    fun navigate() = viewModelScope.launch {
+        when {
+            accountStore.load() == null -> action.postValue(Action.ShowLogin)
+            (deviceRepository.get().valueOrNull() == null && !sharedPrefManager.isDiscoveryWasShown) -> {
+                sharedPrefManager.isDiscoveryWasShown = true
+                action.postValue(Action.ShowDeviceConnection)
             }
+            else -> action.postValue(Action.ShowFolders)
         }
     }
+
+
+    sealed class Action {
+        object ShowLogin : Action()
+        object ShowDeviceConnection : Action()
+        object ShowFolders : Action()
+    }
+
 }

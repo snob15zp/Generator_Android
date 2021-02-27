@@ -72,7 +72,7 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
                 bind(state.data.first, state.data.second)
                 showUserProfileControls(true)
             }
-            State.InProgress -> {
+            is State.InProgress -> {
                 loadingOverlay.root.isVisible = true
                 errorOverlay.root.isVisible = false
                 showUserProfileControls(false)

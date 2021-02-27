@@ -58,7 +58,7 @@ class LoginDialogFragment : FullscreenDialogFragment<LoginFragmentBinding>() {
                 binding.errorText.text = state.error
                 binding.errorText.isVisible = true
             }
-            State.InProgress -> {
+            is State.InProgress -> {
                 binding.loadingOverlay.root.isVisible = true
             }
             else -> {

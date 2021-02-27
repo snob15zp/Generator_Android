@@ -19,10 +19,10 @@ class ProgramsViewModel(
 
     fun load() {
         viewModelScope.launch {
-            state.postValue(State.InProgress)
+            state.postValue(State.InProgress())
 
             generatorApiCoroutinesClient.fetchPrograms(folder.id)
-                .catch { state.postValue(State.apiError(it, apiErrorStringProvider)) }
+                .catch { state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(it), it)) }
                 .collect { state.postValue(State.Success(it)) }
         }
     }

@@ -81,7 +81,7 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = false
             }
-            State.InProgress -> {
+            is State.InProgress -> {
                 loadingOverlay.root.isVisible = true
                 errorOverlay.root.isVisible = false
             }

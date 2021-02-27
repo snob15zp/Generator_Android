@@ -40,19 +40,19 @@ class ImportViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             currentAction.postValue(stringProvider.getString(R.string.action_download))
-            state.postValue(State.InProgress)
-            val files = try {
-                when (importAction) {
-                    is ImportAction.ImportFolder -> importFolder(importAction.folderId)
-                    ImportAction.UpdateFirmware -> emptyMap()
-                }
-            } catch (e: ApiError) {
-                state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(e)))
-                return@launch
-            } catch (e: Exception) {
-                state.postValue(State.Failure(stringProvider.getString(R.string.download_folder_error)))
-                return@launch
-            }
+            state.postValue(State.InProgress())
+//            val files = try {
+//                when (importAction) {
+//                    is ImportAction.ImportFolder -> importFolder(importAction.folderId)
+//                    ImportAction.UpdateFirmware -> emptyMap()
+//                }
+//            } catch (e: ApiError) {
+//                state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(e)))
+//                return@launch
+//            } catch (e: Exception) {
+//                state.postValue(State.Failure(stringProvider.getString(R.string.download_folder_error)))
+//                return@launch
+//            }
 
             try {
                 currentAction.postValue(stringProvider.getString(R.string.action_connectiong))

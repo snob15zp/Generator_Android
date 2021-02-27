@@ -5,22 +5,13 @@ import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
 import com.intelligt.modbus.jlibmodbus.serial.SerialPort
 import com.juul.kable.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withLock
-import okhttp3.internal.toHexString
 import okio.ByteString.Companion.toByteString
 import timber.log.Timber
-import java.io.ByteArrayInputStream
 import java.io.IOException
-import java.io.InputStream
-import java.lang.Exception
 import java.nio.ByteBuffer
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
 @ExperimentalCoroutinesApi
@@ -29,21 +20,18 @@ class SerialPortBluetooth(
     private val writeCharacteristic: Characteristic,
     private val readCharacteristic: Characteristic
 ) : SerialPort(sp) {
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var peripheral: Peripheral? = null
-    private val scope = GlobalScope
-    private var connectionJob: Job? = null
 
-    private val operationChannel = BroadcastChannel<Operation>(Channel.CONFLATED)
+    private val commandChannel = Channel<Command>()
     private val stateFlow = MutableStateFlow(DeviceState.DISCONNECTED)
 
     private val buffer = ByteBuffer.allocate(1024)
     private var writePosition = AtomicInteger(0)
     private var readPosition = 0
 
-    private val readMutex = Mutex()
-
     override fun write(b: Int) {
-        operationChannel.offer(Operation.Write(ByteBuffer.allocate(1).put(b.toByte())))
+        commandChannel.offer(Command.Write(ByteBuffer.allocate(1).put(b.toByte())))
         waitFor(DeviceState.WRITE)
     }
 
@@ -52,8 +40,8 @@ class SerialPortBluetooth(
         if (!isOpened) {
             throw IOException("Port not opened")
         }
-        operationChannel.offer(
-            Operation.Write(
+        commandChannel.offer(
+            Command.Write(
                 ByteBuffer.allocate(bytes.size + 4)
                     .putShort(0x1b00)
                     .put(bytes)
@@ -66,35 +54,29 @@ class SerialPortBluetooth(
 
     override fun open() {
         val bluetoothDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(serialParameters.device)
-        peripheral = scope.peripheral(bluetoothDevice)
-        connectionJob = scope.launch(Dispatchers.IO) {
-            peripheral?.run {
-                connect()
-                launch { connectionStateHandler(this@run) }
-                launch { observeCharacteristicNotifications(this@run) }
-                launch { operationHandler(this@run) }
-            }
-        }
+        val peripheral = scope.peripheral(bluetoothDevice)
+
         println("TTT > waiting for connect...")
-        waitFor(DeviceState.CONNECTED, 10000)
+        runBlocking(scope.coroutineContext) { peripheral.connect() }
+        observeStateHandler(peripheral).launchIn(scope)
+        observeCharacteristicNotifications(peripheral).launchIn(scope)
+        observeCommandChannel(peripheral).launchIn(scope)
+
         println("TTT > connected")
     }
 
-    private suspend fun observeCharacteristicNotifications(peripheral: Peripheral) = try {
-        peripheral.observe(writeCharacteristic).collect {
+    private fun observeCharacteristicNotifications(peripheral: Peripheral) =
+        peripheral.observe(writeCharacteristic).onEach {
             println("TTT > read data from read characteristics: ${it.toByteString()}")
             buffer.put(it)
             writePosition.addAndGet(it.size)
             stateFlow.emit(DeviceState.READ)
         }
-    } catch (e: Exception) {
-        Timber.e(e, "Unable to observe notification")
-        close()
-    }
 
-    private suspend fun operationHandler(peripheral: Peripheral) = operationChannel.consumeEach {
+
+    private fun observeCommandChannel(peripheral: Peripheral) = commandChannel.consumeAsFlow().onEach {
         when (it) {
-            is Operation.Write -> kotlin.runCatching {
+            is Command.Write -> kotlin.runCatching {
                 println("TTT > write byte array ${it.data.array().toByteString()}")
                 peripheral.write(writeCharacteristic, it.data.array(), WriteType.WithoutResponse)
                 stateFlow.emit(DeviceState.WRITE)
@@ -151,30 +133,24 @@ class SerialPortBluetooth(
         buffer.clear()
 
         runBlocking {
+            scope.cancel()
             peripheral?.disconnect()
             peripheral = null
         }
     }
 
-    override fun isOpened(): Boolean {
-        return peripheral != null
-    }
+    override fun isOpened() = peripheral != null
 
     private fun waitFor(state: DeviceState, timeout: Long = 5000) = runBlocking {
         withTimeout(timeout) { stateFlow.filter { it == state }.first() }
     }
 
-    private suspend fun connectionStateHandler(peripheral: Peripheral) =
-        peripheral.state.collect { state ->
+    private fun observeStateHandler(peripheral: Peripheral) =
+        peripheral.state.onEach { state ->
             when (state) {
-                State.Connected -> this.stateFlow.emit(DeviceState.CONNECTED)
-                is State.Disconnected -> {
-                    this.stateFlow.emit(DeviceState.DISCONNECTED)
-                    connectionJob?.cancel()
-                }
+                is State.Disconnected -> close()
                 else -> Unit
             }
-
             Timber.d("Device state changed: $state")
         }
 
@@ -182,9 +158,9 @@ class SerialPortBluetooth(
         CONNECTED, DISCONNECTED, WRITE, READ
     }
 
-    sealed class Operation {
-        data class Write(val data: ByteBuffer) : Operation()
-        object Read : Operation()
+    sealed class Command {
+        data class Write(val data: ByteBuffer) : Command()
+        object Read : Command()
     }
 
     companion object {

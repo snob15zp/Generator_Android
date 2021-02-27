@@ -99,7 +99,7 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
                     it.name ?: "<Unknown>", it.address
                 )
             })
-            State.InProgress -> binding.progressBar.isVisible = true
+            is State.InProgress -> binding.progressBar.isVisible = true
             else -> Unit
         }
     }

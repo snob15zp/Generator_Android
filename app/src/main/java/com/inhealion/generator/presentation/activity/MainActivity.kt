@@ -40,13 +40,15 @@ class MainActivity : AppCompatActivity() {
         setFragmentResultListener(CONNECT_REQUEST_KEY, fragmentResultListener)
 
         with(viewModel) {
-            showLogin.observe(this@MainActivity) { launchLoginDialog() }
-            showFolders.observe(this@MainActivity) { navigateToFolders() }
-            showDeviceConnection.observe(this@MainActivity) { launchConnectionDialog() }
-
+            action.observe(this@MainActivity) {
+                when (it) {
+                    MainViewModel.Action.ShowDeviceConnection -> launchConnectionDialog()
+                    MainViewModel.Action.ShowFolders -> navigateToFolders()
+                    MainViewModel.Action.ShowLogin -> launchLoginDialog()
+                }
+            }
             navigate()
         }
-
     }
 
     private fun handleConnectionResult(result: Bundle) {

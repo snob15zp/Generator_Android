@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentResultListener
-import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportFragmentBinding
@@ -17,7 +16,6 @@ import com.inhealion.generator.presentation.dialogs.ERROR_DIALOG_REQUEST_KEY
 import com.inhealion.generator.presentation.dialogs.ErrorDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
-import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -85,10 +83,10 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
                     ErrorDialogData(getString(R.string.connection_error_title), state.error)
                 )
             }
-            State.Idle -> Unit
-            State.InProgress -> {
+            is State.InProgress -> {
                 binding.progressCircular.isVisible = true
             }
+            State.Idle -> Unit
         }
     }
 }
