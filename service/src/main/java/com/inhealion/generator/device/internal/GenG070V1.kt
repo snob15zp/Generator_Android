@@ -51,13 +51,14 @@ class GenG070V1(address: String) : Generator {
     override fun tryToInit(): Boolean {
         try {
             println("TTT > connect")
+            modbusMasterRTU.setResponseTimeout(750)
             modbusMasterRTU.connect()
-            (1..3).forEach {
+            repeat(2) {
                 try {
                     println("TTT > read version $it")
                     val versionData = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
                     this.version = "${versionData[0]}.${versionData[1]}.${versionData[2]}"
-                    return@forEach
+
                 } catch (e: Exception) {
                     println("TTT > Error: unable to read version")
                     //Ignore exception
@@ -89,14 +90,16 @@ class GenG070V1(address: String) : Generator {
         TODO("Not yet implemented")
     }
 
-    override fun putFile(fileName: String, content: ByteArrayInputStream): ErrorCodes {
+    override fun putFile(fileName: String, content: ByteArray): ErrorCodes {
         return try {
-            val data = content.readBytes()
+            modbusMasterRTU.setResponseTimeout(30000)
             var sending = 0
-            Lfov(fileName, data, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
+            println("TTT > write file $fileName, ${content.size}")
+            Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
+                println("TTT > ---- write chunk ${it.size}")
                 modbusMasterRTU.writeFileRecord(SERVER_ADDRESS, ModbusFileRecord(0, 0, it))
                 sending += it.size
-                _fileImportProgress.tryEmit((sending.toFloat() / data.size * 100).toInt())
+                _fileImportProgress.tryEmit((sending.toFloat() / content.size * 100).toInt())
             }
             ErrorCodes.NO_ERROR
         } catch (e: Exception) {
@@ -116,7 +119,7 @@ class GenG070V1(address: String) : Generator {
         /**
          * Максимальный передаваемый юнит
          **/
-        private const val MAX_ITEM_SIZE = 242
+        private const val MAX_ITEM_SIZE = 240
 
         /**
          * Максимальный размер названия файла

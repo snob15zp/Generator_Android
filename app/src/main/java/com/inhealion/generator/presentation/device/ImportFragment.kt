@@ -80,7 +80,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
                 binding.progressCircular.isVisible = false
                 ErrorDialog.show(
                     parentFragmentManager,
-                    ErrorDialogData(getString(R.string.connection_error_title), state.error)
+                    ErrorDialogData(getString(R.string.error_dialog_title), state.error)
                 )
             }
             is State.InProgress -> {

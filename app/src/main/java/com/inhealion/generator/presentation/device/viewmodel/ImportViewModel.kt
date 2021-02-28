@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.R
 import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.device.DeviceConnectionFactory
+import com.inhealion.generator.device.ErrorCodes
+import com.inhealion.generator.device.Generator
 import com.inhealion.generator.lifecyle.ActionLiveData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.ApiError
@@ -16,6 +18,7 @@ import com.inhealion.generator.utils.StringProvider
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.firstOrNull
 import timber.log.Timber
+import java.io.ByteArrayInputStream
 import java.io.File
 
 class ImportViewModel(
@@ -41,23 +44,41 @@ class ImportViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             currentAction.postValue(stringProvider.getString(R.string.action_download))
             state.postValue(State.InProgress())
-//            val files = try {
-//                when (importAction) {
-//                    is ImportAction.ImportFolder -> importFolder(importAction.folderId)
-//                    ImportAction.UpdateFirmware -> emptyMap()
-//                }
-//            } catch (e: ApiError) {
-//                state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(e)))
-//                return@launch
-//            } catch (e: Exception) {
-//                state.postValue(State.Failure(stringProvider.getString(R.string.download_folder_error)))
-//                return@launch
-//            }
+            val files = try {
+                when (importAction) {
+                    is ImportAction.ImportFolder -> importFolder(importAction.folderId)
+                    ImportAction.UpdateFirmware -> emptyMap()
+                }
+            } catch (e: ApiError) {
+                state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(e)))
+                return@launch
+            } catch (e: Exception) {
+                state.postValue(State.Failure(stringProvider.getString(R.string.download_folder_error)))
+                return@launch
+            }
 
             try {
                 currentAction.postValue(stringProvider.getString(R.string.action_connectiong))
                 connectionFactory.connect(device.address).use { generator ->
-                    currentAction.postValue(stringProvider.getString(R.string.action_download))
+                    currentAction.postValue(stringProvider.getString(R.string.action_import))
+
+                    var totalImported = 0
+                    val total = files.size
+                    files.filter { it.key.endsWith(".txt") }.forEach { (name, data) ->
+                        state.postValue(State.InProgress((totalImported++ * 100) / total))
+                        if (generator.putFile(name, data) != ErrorCodes.NO_ERROR) {
+                            state.postValue(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
+                            return@launch
+                        }
+                    }
+                    files.filter { it.key.endsWith(".pls") }.forEach { (name, data) ->
+                        state.postValue(State.InProgress((totalImported++ * 100) / total))
+                        if (generator.putFile(name, data) != ErrorCodes.NO_ERROR) {
+                            state.postValue(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
+                            return@launch
+                        }
+                    }
+
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Unable to import data")

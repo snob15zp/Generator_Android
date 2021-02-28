@@ -1,5 +1,6 @@
 package com.inhealion.generator.device.internal
 
+import com.intelligt.modbus.jlibmodbus.utils.DataUtils
 import java.io.File
 import java.nio.ByteBuffer
 
@@ -21,17 +22,24 @@ class Lfov(
         }
     }
 
-    override fun hasNext() = position < content.size
+    override fun hasNext() = (position < content.size).also {
+        println("TTT > hasNext: $it")
+    }
 
     override fun next(): IntArray {
+        println("TTT > position: $position")
         if (position >= content.size) {
             throw NoSuchElementException()
         }
 
         val output = ByteBuffer.allocate(maxPayloadSize)
+        val payloadSz = (maxPayloadSize - truncatedFileName.length - 4 - 1)
+        val take = if ((content.size - position) > payloadSz) payloadSz else content.size
+        val pktSz: Int = 1 + truncatedFileName.length + 4 + take
 
-        val payloadSz = (maxPayloadSize - truncatedFileName.length - 4 - 1);
+        output.put((if (pktSz % 2 == 1) truncatedFileName.length + 1 else truncatedFileName.length).toByte())
         output.put(truncatedFileName.toByteArray(Charsets.US_ASCII))
+        if (pktSz % 2 == 1) output.put(0)
 
         var ptrFlags = position
         if ((content.size - position) <= payloadSz) {
@@ -39,13 +47,11 @@ class Lfov(
         }
         output.putInt(ptrFlags)
 
-        val take = if ((content.size - position) > payloadSz) payloadSz else content.size
+        val result = output.array()
+        println("TTT > copy of range: $position, $take, $pktSz, ${result.size}")
         output.put(content.copyOfRange(position, take))
-        if ((output.position() % 2) == 1) {
-            output.put(0)
-        }
         position += take
-        return output.asIntBuffer().array().copyOf(output.position())
+        return DataUtils.BeToIntArray(result)
     }
 
     companion object {

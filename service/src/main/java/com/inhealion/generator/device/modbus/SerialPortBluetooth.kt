@@ -36,7 +36,7 @@ class SerialPortBluetooth(
     }
 
     override fun write(bytes: ByteArray) {
-        println("TTT > start write to device")
+        println("TTT > start write to device, ${bytes.size}")
         if (!isOpened) {
             throw IOException("Port not opened")
         }
@@ -61,6 +61,8 @@ class SerialPortBluetooth(
         observeStateHandler(peripheral).launchIn(scope)
         observeCharacteristicNotifications(peripheral).launchIn(scope)
         observeCommandChannel(peripheral).launchIn(scope)
+
+        this.peripheral = peripheral
 
         println("TTT > connected")
     }
@@ -90,7 +92,7 @@ class SerialPortBluetooth(
             throw IOException("Port not opened")
         }
 
-        if (writePosition.get() == 0) waitFor(DeviceState.READ)
+        if (writePosition.get() == 0) waitFor(DeviceState.READ, readTimeout.toLong())
 
         val data = if (readPosition < writePosition.get()) {
             buffer[readPosition++].toInt()
@@ -107,7 +109,7 @@ class SerialPortBluetooth(
             throw IOException("Port not opened")
         }
 
-        if (writePosition.get() == 0) waitFor(DeviceState.READ)
+        if (writePosition.get() == 0) waitFor(DeviceState.READ, readTimeout.toLong())
 
         if (readPosition < writePosition.get()) {
             buffer.array().copyInto(b, off, readPosition, readPosition + len)
@@ -164,7 +166,7 @@ class SerialPortBluetooth(
     }
 
     companion object {
-        private const val READ_TIMEOUT = 5000L
+        private const val READ_TIMEOUT = 30000L
         private const val END_OF_STREAM = -1
     }
 }

@@ -44,7 +44,7 @@ interface Generator: Closeable {
      *  <param name="content">Содержимое</param>
      *  <returns>True если операция успешна</returns>
      **/
-    fun putFile(fileName: String, content: ByteArrayInputStream): ErrorCodes
+    fun putFile(fileName: String, content: ByteArray): ErrorCodes
 
     /**
      *  Выполняется по записи части файла, для обновления отображения процесса

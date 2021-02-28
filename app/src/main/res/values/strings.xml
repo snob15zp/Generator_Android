@@ -31,10 +31,12 @@
     <string name="connection_error_title">Connection error.</string>
     <string name="connection_error_message">Unable to connect to the device %1$s</string>
     <string name="device_unknown">Unknown</string>
-    <string name="action_connectiong">Connecting...</string>
-    <string name="action_download">Download...</string>
+    <string name="action_connectiong">Connecting…</string>
+    <string name="action_download">Download…</string>
     <string name="persent_value">%1$d%%</string>
     <string name="download_folder_error">Unable to download folder.</string>
+    <string name="action_import">Importing…</string>
+    <string name="error_file_transfer">Data transmission error</string>
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>
         <item quantity="other">Expires in %d months</item>
