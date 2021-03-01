@@ -58,20 +58,7 @@ class GenG070V1(address: String) : Generator {
             println("TTT > connect")
             modbusMasterRTU.setResponseTimeout(750)
             modbusMasterRTU.connect()
-            repeat(2) {
-                try {
-                    println("TTT > read version $it")
-                    val versionData = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
-                    this.version = "${versionData[0]}.${versionData[1]}.${versionData[2]}"
-
-                } catch (e: Exception) {
-                    println("TTT > Error: unable to read version")
-                    //Ignore exception
-                }
-            }
-            if (this.version == null) {
-                return false
-            }
+            version = readVersion() ?: return false
 
             println("TTT > read serial")
             serial = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, SERIAL_REGISTER_ADDR, 6)
@@ -85,6 +72,21 @@ class GenG070V1(address: String) : Generator {
             ready = false
             return false
         }
+    }
+
+    private fun readVersion(): String? {
+        repeat(3) {
+            try {
+                println("TTT > read version $it")
+                val versionData = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
+                return "${versionData[0]}.${versionData[1]}.${versionData[2]}"
+
+            } catch (e: Exception) {
+                println("TTT > Error: unable to read version, ${e.message}")
+                //Ignore exception
+            }
+        }
+        return null
     }
 
     override fun eraseAll(): ErrorCodes {
@@ -102,7 +104,7 @@ class GenG070V1(address: String) : Generator {
             println("TTT > write file $fileName, ${content.size}")
             Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
                 println("TTT > ---- write chunk ${it.size}")
-                writeChunk(it)
+                runBlocking { writeChunk(it) }
                 sending += it.size
                 _fileImportProgress.tryEmit((sending.toFloat() / content.size * 100).toInt())
             }
@@ -113,7 +115,7 @@ class GenG070V1(address: String) : Generator {
         }
     }
 
-    private fun writeChunk(data: IntArray) {
+    private suspend fun writeChunk(data: IntArray) {
         repeat(3) {
             try {
                 println("TTT > ---- writeFileRecord $it")
@@ -122,7 +124,8 @@ class GenG070V1(address: String) : Generator {
             } catch (e: ModbusProtocolException) {
                 Timber.w("writeFileRecord error: $e")
                 when (e.exception) {
-                    ModbusExceptionCode.SLAVE_DEVICE_BUSY -> Unit
+                    ModbusExceptionCode.SLAVE_DEVICE_FAILURE,
+                    ModbusExceptionCode.SLAVE_DEVICE_BUSY -> delay(1000)
                     else -> throw e
                 }
             }
