@@ -46,12 +46,12 @@ class Lfov(
             ptrFlags = ptrFlags.or(1.shr(if (IS_ENCRYPTED) 30 else 31))
         }
         output.putInt(ptrFlags)
+        output.put(content.copyOfRange(position, position + take))
+        position += take
 
         val result = output.array()
         println("TTT > copy of range: $position, $take, $pktSz, ${result.size}")
-        output.put(content.copyOfRange(position, take))
-        position += take
-        return DataUtils.BeToIntArray(result)
+        return DataUtils.BeToIntArray(result.copyOfRange(0, if (pktSz % 2 == 0) pktSz else pktSz + 1))
     }
 
     companion object {
