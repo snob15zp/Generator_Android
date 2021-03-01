@@ -4,15 +4,20 @@ import com.inhealion.generator.device.ErrorCodes
 import com.inhealion.generator.device.Generator
 import com.inhealion.service.BuildConfig
 import com.intelligt.modbus.jlibmodbus.Modbus
+import com.intelligt.modbus.jlibmodbus.exception.ModbusMasterException
+import com.intelligt.modbus.jlibmodbus.exception.ModbusProtocolException
 import com.intelligt.modbus.jlibmodbus.master.ModbusMaster
 import com.intelligt.modbus.jlibmodbus.master.ModbusMasterFactory
 import com.intelligt.modbus.jlibmodbus.msg.base.ModbusFileRecord
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
 import com.intelligt.modbus.jlibmodbus.serial.SerialPortFactoryBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialUtils
+import com.intelligt.modbus.jlibmodbus.utils.ModbusExceptionCode
 import com.juul.kable.characteristicOf
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -97,7 +102,7 @@ class GenG070V1(address: String) : Generator {
             println("TTT > write file $fileName, ${content.size}")
             Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
                 println("TTT > ---- write chunk ${it.size}")
-                modbusMasterRTU.writeFileRecord(SERVER_ADDRESS, ModbusFileRecord(0, 0, it))
+                writeChunk(it)
                 sending += it.size
                 _fileImportProgress.tryEmit((sending.toFloat() / content.size * 100).toInt())
             }
@@ -105,6 +110,22 @@ class GenG070V1(address: String) : Generator {
         } catch (e: Exception) {
             Timber.e(e, "Unable to send file $fileName")
             ErrorCodes.FATAL_ERROR
+        }
+    }
+
+    private fun writeChunk(data: IntArray) {
+        repeat(3) {
+            try {
+                println("TTT > ---- writeFileRecord $it")
+                modbusMasterRTU.writeFileRecord(SERVER_ADDRESS, ModbusFileRecord(0, 0, data))
+                return
+            } catch (e: ModbusProtocolException) {
+                Timber.w("writeFileRecord error: $e")
+                when (e.exception) {
+                    ModbusExceptionCode.SLAVE_DEVICE_BUSY -> Unit
+                    else -> throw e
+                }
+            }
         }
     }
 
@@ -119,7 +140,7 @@ class GenG070V1(address: String) : Generator {
         /**
          * Максимальный передаваемый юнит
          **/
-        private const val MAX_ITEM_SIZE = 240
+        private const val MAX_ITEM_SIZE = 140
 
         /**
          * Максимальный размер названия файла
