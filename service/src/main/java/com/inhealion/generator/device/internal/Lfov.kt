@@ -3,6 +3,7 @@ package com.inhealion.generator.device.internal
 import com.intelligt.modbus.jlibmodbus.utils.DataUtils
 import java.io.File
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class Lfov(
     fileName: String,
@@ -31,9 +32,9 @@ class Lfov(
         if (position >= content.size) {
             throw NoSuchElementException()
         }
-
-        val output = ByteBuffer.allocate(maxPayloadSize)
         val payloadSz = (maxPayloadSize - truncatedFileName.length - 4 - 1)
+
+        val output = ByteBuffer.allocate(maxPayloadSize).apply { order(ByteOrder.LITTLE_ENDIAN) }
         val take = if ((content.size - position) > payloadSz) payloadSz else content.size
         val pktSz: Int = 1 + truncatedFileName.length + 4 + take
 
@@ -43,7 +44,10 @@ class Lfov(
 
         var ptrFlags = position
         if ((content.size - position) <= payloadSz) {
-            ptrFlags = ptrFlags.or(1.shr(if (IS_ENCRYPTED) 30 else 31))
+            ptrFlags = ptrFlags.or(1.shr(31))
+        }
+        if(IS_ENCRYPTED) {
+            ptrFlags = ptrFlags.or(1.shr(30))
         }
         output.putInt(ptrFlags)
         output.put(content.copyOfRange(position, position + take))
