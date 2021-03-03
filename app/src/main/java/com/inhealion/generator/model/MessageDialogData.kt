@@ -4,7 +4,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class ErrorDialogData(
+data class MessageDialogData(
     val title: String,
     val message: String
 ): Parcelable

@@ -23,20 +23,20 @@ class FolderViewModel(
 
     fun load() {
         viewModelScope.launch {
-            state.postValue(State.InProgress())
+            postState(State.InProgress())
 
             val user = userRepository.get().valueOrNull() ?: run {
-                state.postValue(State.Failure(stringResource(R.string.error_unknown)))
+                postState(State.Failure(stringResource(R.string.error_unknown)))
                 return@launch
             }
             generatorApiCoroutinesClient.fetchUserProfile(user.id!!)
                 .flatMapConcat { userProfile ->
                     generatorApiCoroutinesClient.fetchFolders(userProfile.id).map { userProfile to it }
                 }
-                .catch { state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(it), it)) }
+                .catch { postState(State.Failure(apiErrorStringProvider.getErrorMessage(it), it)) }
                 .collect {
                     folders = it.second
-                    state.postValue(State.Success(it))
+                    postState(State.Success(it))
                 }
         }
     }

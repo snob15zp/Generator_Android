@@ -31,8 +31,9 @@ class SerialPortBluetooth(
     private var readPosition = 0
 
     override fun write(b: Int) {
-        commandChannel.offer(Command.Write(ByteBuffer.allocate(1).put(b.toByte())))
-        waitFor(DeviceState.WRITE)
+        throw NotImplementedError()
+//        commandChannel.offer(Command.Write(ByteBuffer.allocate(1).put(b.toByte())))
+//        waitFor(DeviceState.WRITE)
     }
 
     override fun write(bytes: ByteArray) {
@@ -42,10 +43,9 @@ class SerialPortBluetooth(
         }
         commandChannel.offer(
             Command.Write(
-                ByteBuffer.allocate(bytes.size + 4)
-                    .putShort(0x1b00)
-                    .put(bytes)
-                    .putShort(0x1b01)
+                mutableListOf<Byte>(0x1b, 0x00, 0x1b, 0x01).apply {
+                    addAll(2, escapeBytes(bytes))
+                }
             )
         )
         waitFor(DeviceState.WRITE)
@@ -70,8 +70,9 @@ class SerialPortBluetooth(
     private fun observeCharacteristicNotifications(peripheral: Peripheral) =
         peripheral.observe(writeCharacteristic).onEach {
             println("TTT > read data from read characteristics: ${it.toByteString()}")
-            buffer.put(it)
-            writePosition.addAndGet(it.size)
+            val data = unescapeBytes(it)
+            buffer.put(data)
+            writePosition.addAndGet(data.size)
             stateFlow.emit(DeviceState.READ)
         }
 
@@ -79,8 +80,8 @@ class SerialPortBluetooth(
     private fun observeCommandChannel(peripheral: Peripheral) = commandChannel.consumeAsFlow().onEach {
         when (it) {
             is Command.Write -> kotlin.runCatching {
-                println("TTT > write byte array ${it.data.array().toByteString()}")
-                peripheral.write(writeCharacteristic, it.data.array(), WriteType.WithoutResponse)
+                println("TTT > write byte array ${it.data.toByteArray().toByteString()}")
+                peripheral.write(writeCharacteristic, it.data.toByteArray(), WriteType.WithoutResponse)
                 stateFlow.emit(DeviceState.WRITE)
             }
             else -> Unit
@@ -119,6 +120,34 @@ class SerialPortBluetooth(
         }
         clearReadBufferIfNeeded()
         return len
+    }
+
+    private fun escapeBytes(bytes: ByteArray): List<Byte> {
+        val escapeBytes = mutableListOf<Byte>()
+        bytes.forEach {
+            if (it in WRITE_ESCAPE_BYTES) {
+                escapeBytes.add(ESCAPE_CTRL)
+                escapeBytes.add((it - 1).toByte())
+            } else {
+                escapeBytes.add(it)
+            }
+        }
+        return escapeBytes
+    }
+
+    private fun unescapeBytes(bytes: ByteArray): ByteArray {
+        val unescapeBytes = mutableListOf<Byte>()
+        var idx = 0
+        while (idx < bytes.size) {
+            if (bytes[idx] == ESCAPE_CTRL) {
+                idx++
+                unescapeBytes.add((bytes[idx] + 1).toByte())
+            } else {
+                unescapeBytes.add(bytes[idx])
+            }
+            idx++
+        }
+        return unescapeBytes.toByteArray()
     }
 
 
@@ -161,11 +190,15 @@ class SerialPortBluetooth(
     }
 
     sealed class Command {
-        data class Write(val data: ByteBuffer) : Command()
+        data class Write(val data: List<Byte>) : Command()
         object Read : Command()
     }
 
     companion object {
+        private val WRITE_ESCAPE_BYTES = arrayOf<Byte>(0x1b, 0x25)
+        private val READ_ESCAPE_BYTES = arrayOf<Byte>(0x24)
+        private val ESCAPE_CTRL: Byte = 0x1b
+
         private const val READ_TIMEOUT = 30000L
         private const val END_OF_STREAM = -1
     }

@@ -6,7 +6,6 @@ import com.inhealion.generator.R
 import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.device.DeviceConnectionFactory
 import com.inhealion.generator.device.ErrorCodes
-import com.inhealion.generator.device.Generator
 import com.inhealion.generator.lifecyle.ActionLiveData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.ApiError
@@ -17,8 +16,9 @@ import com.inhealion.generator.utils.ApiErrorStringProvider
 import com.inhealion.generator.utils.StringProvider
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
-import java.io.ByteArrayInputStream
 import java.io.File
 
 class ImportViewModel(
@@ -28,7 +28,7 @@ class ImportViewModel(
     private val connectionFactory: DeviceConnectionFactory,
     private val stringProvider: StringProvider,
     private val apiErrorStringProvider: ApiErrorStringProvider
-) : BaseViewModel<Nothing>() {
+) : BaseViewModel<Any>() {
 
     val showDiscovery = ActionLiveData()
     val currentAction = MutableLiveData<String>()
@@ -43,49 +43,58 @@ class ImportViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             currentAction.postValue(stringProvider.getString(R.string.action_download))
-            state.postValue(State.InProgress())
+            postState(State.InProgress())
             val files = try {
                 when (importAction) {
                     is ImportAction.ImportFolder -> importFolder(importAction.folderId)
                     ImportAction.UpdateFirmware -> emptyMap()
                 }
             } catch (e: ApiError) {
-                state.postValue(State.Failure(apiErrorStringProvider.getErrorMessage(e)))
+                postState(State.Failure(apiErrorStringProvider.getErrorMessage(e)))
                 return@launch
             } catch (e: Exception) {
-                state.postValue(State.Failure(stringProvider.getString(R.string.download_folder_error)))
+                postState(State.Failure(stringProvider.getString(R.string.download_folder_error)))
                 return@launch
             }
 
             try {
-                currentAction.postValue(stringProvider.getString(R.string.action_connectiong))
+                currentAction.postValue(stringProvider.getString(R.string.action_connecting))
                 connectionFactory.connect(device.address).use { generator ->
                     currentAction.postValue(stringProvider.getString(R.string.action_import))
 
-                    var totalImported = 0
-                    val total = files.size
+                    val totalSize = files.values.sumOf { it.size }
+                    var importedSize = 0
+                    generator.fileImportProgress.onEach {
+                        importedSize += it
+                        postState(State.InProgress((importedSize * 100) / totalSize))
+                    }.launchIn(viewModelScope)
+
                     files.filter { it.key.endsWith(".txt") }.forEach { (name, data) ->
-                        state.postValue(State.InProgress((totalImported++ * 100) / total))
                         if (generator.putFile(name, data) != ErrorCodes.NO_ERROR) {
-                            state.postValue(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
+                            postState(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
                             return@launch
                         }
                     }
                     files.filter { it.key.endsWith(".pls") }.forEach { (name, data) ->
-                        state.postValue(State.InProgress((totalImported++ * 100) / total))
                         if (generator.putFile(name, data) != ErrorCodes.NO_ERROR) {
-                            state.postValue(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
+                            postState(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
                             return@launch
                         }
                     }
-
+                    println("RRR > finished")
+                    postState(State.success())
                 }
+                println("RRR > done")
             } catch (e: Exception) {
                 Timber.e(e, "Unable to import data")
                 val deviceName = device.name ?: stringProvider.getString(R.string.device_unknown)
-                state.postValue(State.Failure(stringProvider.getString(R.string.connection_error_message, deviceName)))
+                postState(State.Failure(stringProvider.getString(R.string.connection_error_message, deviceName)))
             }
         }
+    }
+
+    fun cancel() {
+
     }
 
     private suspend fun importFolder(folderId: String): Map<String, ByteArray> {

@@ -14,21 +14,42 @@
         layout="@layout/error_layout"
         android:visibility="gone" />
 
-    <ImageView
-        android:id="@+id/closeImage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/default_margin"
-        android:src="@drawable/ic_baseline_close_24"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/white"
+        android:elevation="4dp"
+        android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
 
+        <ImageView
+            android:id="@+id/closeImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/default_margin"
+            android:src="@drawable/ic_baseline_close_24"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="@dimen/default_margin"
+            android:fontFamily="@font/roboto_medium"
+            android:textColor="@color/textColor"
+            android:textSize="20sp"
+            tools:text="Import folder" />
+    </LinearLayout>
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/actionTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/default_margin"
+        android:textSize="@dimen/font_size_h2"
         app:layout_constraintBottom_toTopOf="@+id/progress_circular"
         app:layout_constraintEnd_toEndOf="@+id/progress_circular"
         app:layout_constraintStart_toStartOf="@+id/progress_circular"
@@ -38,8 +59,8 @@
     <ProgressBar
         android:id="@+id/progress_circular"
         style="@style/ProgressBar.Medium"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:elevation="2dp"
         android:indeterminate="true"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -52,8 +73,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/textColor"
-        android:textSize="@dimen/font_size_major"
-        app:fontFamily="@font/roboto_medium"
+        android:textSize="@dimen/font_size_h1"
+        app:fontFamily="@font/roboto_regular"
         app:layout_constraintBottom_toBottomOf="@+id/progress_circular"
         app:layout_constraintEnd_toEndOf="@+id/progress_circular"
         app:layout_constraintStart_toStartOf="@+id/progress_circular"

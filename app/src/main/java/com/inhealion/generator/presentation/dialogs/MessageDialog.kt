@@ -8,12 +8,12 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import com.inhealion.generator.R
-import com.inhealion.generator.model.ErrorDialogData
+import com.inhealion.generator.model.MessageDialogData
 
 const val ERROR_DIALOG_REQUEST_KEY = "ERROR_DIALOG_REQUEST_KEY"
 
-class ErrorDialog : DialogFragment() {
-    private val errorDialogData get() = requireArguments().getParcelable<ErrorDialogData>(KEY_ERROR_DATA)
+class MessageDialog : DialogFragment() {
+    private val errorDialogData get() = requireArguments().getParcelable<MessageDialogData>(KEY_ERROR_DATA)
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return AlertDialog.Builder(requireContext())
@@ -33,11 +33,11 @@ class ErrorDialog : DialogFragment() {
 
         fun show(
             fragmentManager: FragmentManager,
-            errorDialogData: ErrorDialogData
+            messageDialogData: MessageDialogData
         ) {
-            ErrorDialog().apply {
+            MessageDialog().apply {
                 arguments = bundleOf(
-                    KEY_ERROR_DATA to errorDialogData,
+                    KEY_ERROR_DATA to messageDialogData,
                 )
             }.show(fragmentManager, "ErrorDialog")
         }

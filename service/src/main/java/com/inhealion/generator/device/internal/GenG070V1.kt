@@ -14,9 +14,12 @@ import com.intelligt.modbus.jlibmodbus.serial.SerialPortFactoryBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialUtils
 import com.intelligt.modbus.jlibmodbus.utils.ModbusExceptionCode
 import com.juul.kable.characteristicOf
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.ByteArrayInputStream
@@ -35,8 +38,8 @@ class GenG070V1(address: String) : Generator {
 
     private val modbusMasterRTU: ModbusMaster
 
-    private val _fileImportProgress = MutableSharedFlow<Int>()
-    override val fileImportProgress: Flow<Int> get() = _fileImportProgress
+    private val _fileImportProgress = Channel<Int>()
+    override val fileImportProgress: Flow<Int> get() = _fileImportProgress.consumeAsFlow()
 
     init {
         Modbus.setLogLevel(if (BuildConfig.DEBUG) Modbus.LogLevel.LEVEL_DEBUG else Modbus.LogLevel.LEVEL_RELEASE)
@@ -100,13 +103,11 @@ class GenG070V1(address: String) : Generator {
     override fun putFile(fileName: String, content: ByteArray): ErrorCodes {
         return try {
             modbusMasterRTU.setResponseTimeout(30000)
-            var sending = 0
             println("TTT > write file $fileName, ${content.size}")
             Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
                 println("TTT > ---- write chunk ${it.size}")
                 runBlocking { writeChunk(it) }
-                sending += it.size
-                _fileImportProgress.tryEmit((sending.toFloat() / content.size * 100).toInt())
+                _fileImportProgress.offer(it.size * 2 - it[0].shr(8).and(0xff) - 4 - 1)
             }
             ErrorCodes.NO_ERROR
         } catch (e: Exception) {

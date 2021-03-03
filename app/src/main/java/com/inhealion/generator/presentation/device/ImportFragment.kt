@@ -9,11 +9,11 @@ import androidx.fragment.app.FragmentResultListener
 import androidx.navigation.fragment.navArgs
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportFragmentBinding
-import com.inhealion.generator.model.ErrorDialogData
+import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.presentation.device.viewmodel.ImportViewModel
 import com.inhealion.generator.presentation.dialogs.ERROR_DIALOG_REQUEST_KEY
-import com.inhealion.generator.presentation.dialogs.ErrorDialog
+import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.RESULT_KEY
@@ -46,6 +46,10 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
         binding.cancelButton.setOnClickListener { back() }
         binding.closeImage.setOnClickListener { back() }
+        binding.titleTextView.text = when (viewModel.importAction) {
+            is ImportAction.ImportFolder -> getString(R.string.import_folder)
+            ImportAction.UpdateFirmware -> getString(R.string.flash_firmware)
+        }
 
         with(viewModel) {
             showDiscovery.observe(viewLifecycleOwner) { DiscoveryDialogFragment.show(parentFragmentManager) }
@@ -57,9 +61,14 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.cancel()
+    }
+
     private fun handleProgressChanged(progress: Int?) {
         if (progress != null && progress > 0) {
-            binding.progressTextView.text = getString(R.string.persent_value, progress)
+            binding.progressTextView.text = getString(R.string.percent_value, progress)
         } else {
             binding.progressTextView.text = null
         }
@@ -73,18 +82,32 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         }
     }
 
-    private fun switchState(state: State<Nothing>) {
+    private fun switchState(state: State<*>) {
+        println("RRR > state changed $state")
         when (state) {
-            is State.Success -> Unit
+            is State.Success -> {
+                binding.actionTextView.text = getString(R.string.done)
+                MessageDialog.show(
+                    parentFragmentManager,
+                    MessageDialogData("", getString(R.string.import_success))
+                )
+            }
             is State.Failure -> {
                 binding.progressCircular.isVisible = false
-                ErrorDialog.show(
+                MessageDialog.show(
                     parentFragmentManager,
-                    ErrorDialogData(getString(R.string.error_dialog_title), state.error)
+                    MessageDialogData(getString(R.string.error_dialog_title), state.error)
                 )
             }
             is State.InProgress -> {
                 binding.progressCircular.isVisible = true
+                binding.progressCircular.isIndeterminate = state.progress < 0
+                binding.progressCircular.progress = state.progress
+
+                binding.progressTextView.isVisible = state.progress > 0
+                binding.progressTextView.text = if (state.progress > 0) {
+                    getString(R.string.percent_value, state.progress)
+                } else null
             }
             State.Idle -> Unit
         }

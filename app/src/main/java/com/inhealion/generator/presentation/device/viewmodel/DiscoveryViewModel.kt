@@ -29,15 +29,15 @@ class DiscoveryViewModel(
     private val list = mutableListOf<BleDevice>()
 
     fun start() {
-        state.postValue(State.InProgress())
         list.clear()
         isDeviceSelected = false
 
         viewModelScope.launch {
+            postState(State.InProgress())
             scanner.scan()
                 .onEach {
                     if (!list.contains(it)) list.add(it)
-                    state.postValue(State.Success(list))
+                    postState(State.Success(list))
                 }.launchIn(viewModelScope)
         }
     }
@@ -49,7 +49,7 @@ class DiscoveryViewModel(
                     isDeviceSelected = true
                     finish.sendAction()
                 }
-                .onFailure { state.postValue(State.Failure(it.message!!)) }
+                .onFailure { postState(State.Failure(it.message!!)) }
         }
     }
 }
