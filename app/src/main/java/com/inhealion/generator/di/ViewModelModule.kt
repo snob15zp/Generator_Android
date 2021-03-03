@@ -13,7 +13,7 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    viewModel { DiscoveryViewModel(get(), get()) }
+    viewModel { DiscoveryViewModel(get(), get(), get()) }
     viewModel { LoginViewModel(get(), get()) }
     viewModel { FolderViewModel(get(), get(), get()) }
     viewModel { (folder: Folder) -> ProgramsViewModel(folder, get(), get()) }

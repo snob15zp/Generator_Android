@@ -24,7 +24,7 @@ internal class GeneratorApiCoroutinesClientImpl(
     baseUrl: String,
     private val context: Context,
     private val accountStore: AccountStore
-) : BaseGeneratorApiClient(baseUrl, accountStore), GeneratorApiCoroutinesClient {
+) : BaseGeneratorApiClient(context, baseUrl, accountStore), GeneratorApiCoroutinesClient {
     private val downloadFolder = context.getDir("download", Context.MODE_PRIVATE)
     private val refreshTokenAttempt = AtomicInteger(0)
 

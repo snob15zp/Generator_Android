@@ -50,10 +50,10 @@ class Lfov(
 
         var ptrFlags = position
         if ((content.size - position) <= payloadSz) {
-            ptrFlags = ptrFlags.or(1.shr(31))
+            ptrFlags = ptrFlags.or(1.shl(31))
         }
         if (IS_ENCRYPTED) {
-            ptrFlags = ptrFlags.or(1.shr(30))
+            ptrFlags = ptrFlags.or(1.shl(30))
         }
         output.putInt(ptrFlags)
         output.put(content.copyOfRange(position, position + payloadSz))

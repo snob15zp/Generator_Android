@@ -15,7 +15,7 @@ fun Application.initLogger() {
 
 fun Application.initGeneratorApiClient() {
     val accountStore: AccountStore by inject()
-    GeneratorApiClient.initialize(BASE_URL, accountStore)
+    GeneratorApiClient.initialize(this, BASE_URL, accountStore)
 }
 
 fun Application.initRepository() {

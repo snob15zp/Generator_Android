@@ -41,6 +41,7 @@
     <string name="done">Done</string>
     <string name="import_folder">Import folder</string>
     <string name="flash_firmware">Flash firmware</string>
+    <string name="error_bluetooth_disabled">Bluetooth is disabled</string>
 
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>

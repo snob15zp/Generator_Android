@@ -196,10 +196,6 @@ class SerialPortBluetooth(
 
     companion object {
         private val WRITE_ESCAPE_BYTES = arrayOf<Byte>(0x1b, 0x25)
-        private val READ_ESCAPE_BYTES = arrayOf<Byte>(0x24)
-        private val ESCAPE_CTRL: Byte = 0x1b
-
-        private const val READ_TIMEOUT = 30000L
-        private const val END_OF_STREAM = -1
+        private const val ESCAPE_CTRL: Byte = 0x1b
     }
 }

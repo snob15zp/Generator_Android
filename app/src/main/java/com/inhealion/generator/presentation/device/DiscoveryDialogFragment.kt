@@ -68,6 +68,7 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
 
         binding.closeImage.setOnClickListener { dismiss() }
         binding.grantAccessButton.setOnClickListener { gotoSettings() }
+        binding.errorOverlay.retryButton.setOnClickListener { viewModel.start() }
 
         viewModel.apply {
             state.observe(viewLifecycleOwner) { switchToState(it) }
@@ -93,13 +94,23 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
 
     private fun switchToState(state: State<List<BleDevice>>) {
         when (state) {
-            is State.Failure -> Toast.makeText(requireContext(), state.error, Toast.LENGTH_LONG).show()
-            is State.Success -> adapter.submitList((state.data).map {
-                DeviceUiModel(
-                    it.name ?: "<Unknown>", it.address
-                )
-            })
-            is State.InProgress -> binding.progressBar.isVisible = true
+            is State.Failure -> {
+                binding.progressBar.isVisible = false
+                binding.errorOverlay.root.isVisible = true
+                binding.errorOverlay.errorTextView.text = state.error
+            }
+            is State.Success -> {
+                binding.errorOverlay.root.isVisible = false
+                adapter.submitList((state.data).map {
+                    DeviceUiModel(
+                        it.name ?: "<Unknown>", it.address
+                    )
+                })
+            }
+            is State.InProgress -> {
+                binding.errorOverlay.root.isVisible = false
+                binding.progressBar.isVisible = true
+            }
             else -> Unit
         }
     }

@@ -92,22 +92,28 @@
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginTop="@dimen/default_margin"
-        android:visibility="invisible"
-        tools:visibility="visible"
         android:background="@color/color_divider"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="@id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@id/guidelineStart"
-        app:layout_constraintTop_toBottomOf="@id/addressTextView" />
+        app:layout_constraintTop_toBottomOf="@id/addressTextView"
+        tools:visibility="visible" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/foldersRecyclerView"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@+id/guidelineStart"
-        app:layout_constraintTop_toTopOf="@+id/item_divider" />
+        app:layout_constraintTop_toTopOf="@+id/item_divider">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/foldersRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineStart"

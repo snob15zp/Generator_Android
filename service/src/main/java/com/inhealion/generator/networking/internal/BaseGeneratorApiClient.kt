@@ -1,5 +1,6 @@
 package com.inhealion.generator.networking.internal
 
+import android.content.Context
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.adapter.DateJsonAdapter
@@ -9,17 +10,17 @@ import com.inhealion.service.BuildConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import okhttp3.Interceptor
-import okhttp3.OkHttpClient
-import okhttp3.Response
+import okhttp3.*
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import timber.log.Timber
+import java.io.File
 import java.util.*
 
 internal open class BaseGeneratorApiClient(
+    context: Context,
     baseUrl: String,
     private val accountStore: AccountStore
 ) {
@@ -38,6 +39,12 @@ internal open class BaseGeneratorApiClient(
         }
 
         val client = OkHttpClient.Builder()
+            .cache(
+                Cache(
+                    directory = File(context.cacheDir, "http_cache"),
+                    maxSize = 50L * 1024L * 1024L // 50 MiB
+                )
+            )
             .addInterceptor(AuthHeaderInterceptor())
             .addInterceptor(logging)
             .build()

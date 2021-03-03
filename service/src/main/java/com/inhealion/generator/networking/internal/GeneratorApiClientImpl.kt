@@ -1,5 +1,6 @@
 package com.inhealion.generator.networking.internal
 
+import android.content.Context
 import com.inhealion.generator.networking.ApiCallback
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.GeneratorApiClient
@@ -13,9 +14,10 @@ import kotlinx.coroutines.launch
 import java.io.InputStream
 
 internal class GeneratorApiClientImpl(
+    context: Context,
     baseUrl: String,
     private val accountStore: AccountStore
-) : BaseGeneratorApiClient(baseUrl, accountStore), GeneratorApiClient {
+) : BaseGeneratorApiClient(context, baseUrl, accountStore), GeneratorApiClient {
 
     override fun signIn(login: String, password: String, callback: ApiCallback<User>) = sendRequest(callback) {
         service.login(login, password)?.also {

@@ -121,6 +121,11 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <include
+        android:id="@+id/errorOverlay"
+        layout="@layout/error_layout"
+        android:visibility="gone" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineTop"
         android:layout_width="wrap_content"

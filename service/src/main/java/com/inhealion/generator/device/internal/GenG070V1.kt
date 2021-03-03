@@ -4,7 +4,6 @@ import com.inhealion.generator.device.ErrorCodes
 import com.inhealion.generator.device.Generator
 import com.inhealion.service.BuildConfig
 import com.intelligt.modbus.jlibmodbus.Modbus
-import com.intelligt.modbus.jlibmodbus.exception.ModbusMasterException
 import com.intelligt.modbus.jlibmodbus.exception.ModbusProtocolException
 import com.intelligt.modbus.jlibmodbus.master.ModbusMaster
 import com.intelligt.modbus.jlibmodbus.master.ModbusMasterFactory
@@ -12,17 +11,15 @@ import com.intelligt.modbus.jlibmodbus.msg.base.ModbusFileRecord
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
 import com.intelligt.modbus.jlibmodbus.serial.SerialPortFactoryBluetooth
 import com.intelligt.modbus.jlibmodbus.serial.SerialUtils
+import com.intelligt.modbus.jlibmodbus.utils.DataUtils
 import com.intelligt.modbus.jlibmodbus.utils.ModbusExceptionCode
 import com.juul.kable.characteristicOf
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
-import java.io.ByteArrayInputStream
 import java.io.IOException
 
 class GenG070V1(address: String) : Generator {
@@ -97,7 +94,37 @@ class GenG070V1(address: String) : Generator {
     }
 
     override fun eraseByExt(ext: String): ErrorCodes {
-        TODO("Not yet implemented")
+        println("TTT > Erase by extension $ext")
+        var buffer = ext.toByteArray(Charsets.US_ASCII)
+        if (buffer.size % 2 == 1) buffer = buffer.plus(0)
+
+        val data = DataUtils.LeToIntArray(buffer)
+        modbusMasterRTU.setResponseTimeout(30000)
+        try {
+            return eraseByExt(data)
+        } catch (e: ModbusProtocolException) {
+            when (e.exception) {
+                ModbusExceptionCode.SLAVE_DEVICE_FAILURE,
+                ModbusExceptionCode.SLAVE_DEVICE_BUSY -> try {
+                    Timber.w("Device is busy, try send command again")
+                    return eraseByExt(data)
+                } catch (e: Exception) {
+                    Timber.w("Second attempt to erase failed")
+                }
+                else -> Unit.also { Timber.e(e, "Unable to erase files by extension $ext") }
+            }
+            return ErrorCodes.FATAL_ERROR
+        } catch (e: Exception) {
+            Timber.e(e, "Unable to erase files by extension $ext")
+            return ErrorCodes.FATAL_ERROR
+        }
+    }
+
+    private fun eraseByExt(data: IntArray): ErrorCodes {
+        modbusMasterRTU.writeMultipleRegisters(SERVER_ADDRESS, ERASE_FILENAME_REG_ADDR, data)
+        modbusMasterRTU.writeSingleCoil(SERVER_ADDRESS, ERASE_FILENAME_COIL_ADDR, true)
+        println("TTT > Erase by extension success")
+        return ErrorCodes.NO_ERROR
     }
 
     override fun putFile(fileName: String, content: ByteArray): ErrorCodes {
@@ -171,16 +198,16 @@ class GenG070V1(address: String) : Generator {
         /**
          * Адрес названия файла для удаления
          **/
-        const val EraseFilenameRegAddr: UShort = 56u
+        const val ERASE_FILENAME_REG_ADDR: Int = 0x38
 
         /**
          * Адрес бита очистки flash
          **/
-        const val EraseAllCoilAddr: UShort = 128u
+        const val ERASE_ALL_COIL_ADDR: Int = 0x80
 
         /**
          * Адрес бита удаления файла
          **/
-        const val EraseFilenameCoilAddr: UShort = 129u
+        const val ERASE_FILENAME_COIL_ADDR: Int = 0x81
     }
 }

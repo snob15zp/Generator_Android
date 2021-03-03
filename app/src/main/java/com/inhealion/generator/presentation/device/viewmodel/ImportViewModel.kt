@@ -62,6 +62,9 @@ class ImportViewModel(
                 connectionFactory.connect(device.address).use { generator ->
                     currentAction.postValue(stringProvider.getString(R.string.action_import))
 
+                    generator.eraseByExt("txt")
+                    generator.eraseByExt("pls")
+
                     val totalSize = files.values.sumOf { it.size }
                     var importedSize = 0
                     generator.fileImportProgress.onEach {

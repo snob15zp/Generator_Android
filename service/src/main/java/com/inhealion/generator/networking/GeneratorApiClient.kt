@@ -1,12 +1,12 @@
 package com.inhealion.generator.networking
 
+import android.content.Context
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.api.model.Folder
 import com.inhealion.generator.networking.api.model.Program
 import com.inhealion.generator.networking.api.model.User
 import com.inhealion.generator.networking.internal.GeneratorApiClientImpl
 import java.io.InputStream
-import java.lang.IllegalStateException
 
 interface GeneratorApiClient {
 
@@ -27,14 +27,14 @@ interface GeneratorApiClient {
         fun instance(): GeneratorApiClient = instance ?: throw IllegalStateException("Client not initialized yet")
 
         @JvmStatic
-        fun initialize(baseUrl: String, accountStore: AccountStore) {
-            instance = GeneratorApiClient(baseUrl, accountStore)
+        fun initialize(context: Context, baseUrl: String, accountStore: AccountStore) {
+            instance = GeneratorApiClient(context, baseUrl, accountStore)
         }
 
         @JvmStatic
         @JvmName("create")
-        operator fun invoke(baseUrl: String, accountStore: AccountStore): GeneratorApiClient {
-            return GeneratorApiClientImpl(baseUrl, accountStore)
+        operator fun invoke(context: Context, baseUrl: String, accountStore: AccountStore): GeneratorApiClient {
+            return GeneratorApiClientImpl(context, baseUrl, accountStore)
         }
     }
 }
