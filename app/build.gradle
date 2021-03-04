@@ -9,6 +9,12 @@ android {
     compileSdkVersion 30
     buildToolsVersion "30.0.1"
 
+    signingConfigs {
+        release keystore.signingConfigs
+        debug keystore.debugSigningConfigs
+    }
+
+
     defaultConfig {
         applicationId "com.inhealion.generator"
         minSdkVersion 23
