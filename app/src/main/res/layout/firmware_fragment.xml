@@ -1,18 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-
 
     <include
         android:id="@+id/loadingOverlay"
         layout="@layout/loading_dialog"
         android:visibility="gone" />
 
-    <include
-        android:id="@+id/errorOverlay"
-        layout="@layout/error_layout"
-        android:visibility="gone" />
+    <TextView
+        android:id="@+id/latestVersionTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/roboto_medium"
+        android:text="@string/latest_version"
+        android:textColor="@color/textColor"
+        android:textSize="@dimen/font_size_normal"
+        app:layout_constraintStart_toStartOf="@id/guidelineStart"
+        app:layout_constraintTop_toTopOf="@id/guidelineTop" />
+
+    <TextView
+        android:id="@+id/latestVersionValueTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/default_margin"
+        android:fontFamily="@font/roboto_regular"
+        android:textColor="@color/textColor"
+        app:layout_constraintStart_toEndOf="@+id/latestVersionTextView"
+        app:layout_constraintTop_toTopOf="@+id/latestVersionTextView"
+        tools:text="1.02.23" />
+
+    <TextView
+        android:id="@+id/deviceVersionTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/half_margin"
+        android:fontFamily="@font/roboto_medium"
+        android:text="@string/device_version"
+        android:textColor="@color/textColor"
+        android:textSize="@dimen/font_size_normal"
+        app:layout_constraintStart_toStartOf="@id/guidelineStart"
+        app:layout_constraintTop_toBottomOf="@id/latestVersionValueTextView" />
+
+    <TextView
+        android:id="@+id/deviceVersionValueTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/default_margin"
+        android:fontFamily="@font/roboto_regular"
+        android:textColor="@color/textColor"
+        app:layout_constraintStart_toEndOf="@+id/deviceVersionTextView"
+        app:layout_constraintTop_toTopOf="@+id/deviceVersionTextView"
+        tools:text="1.02.23" />
+
+    <TextView
+        android:id="@+id/lastUpdateDateTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/half_margin"
+        android:background="@color/black_alpha_10"
+        android:fontFamily="@font/roboto_regular"
+        android:padding="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textColor="@color/textColorDark"
+        android:textSize="@dimen/font_size_small"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/deviceVersionTextView"
+        tools:text="Last updated at: 10-10-2020 12:30:00" />
+
+    <TextView
+        android:id="@+id/noUpdateTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/default_margin"
+        android:fontFamily="@font/roboto_medium"
+        android:text="@string/it_is_already_latest_version"
+        android:textColor="@color/textColor"
+        android:textSize="@dimen/font_size_major"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lastUpdateDateTextView" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/updateButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/default_margin"
+        android:text="@string/flash"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lastUpdateDateTextView" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="@dimen/default_margin" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineEnd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_end="@dimen/default_margin" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineTop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="24dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guidelineBottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="@dimen/default_margin" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

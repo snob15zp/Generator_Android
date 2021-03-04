@@ -4,6 +4,7 @@ import android.content.Context
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.networking.account.AccountStore
+import com.inhealion.generator.networking.api.model.FirmwareVersion
 import com.inhealion.generator.networking.api.model.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -66,6 +67,9 @@ internal class GeneratorApiCoroutinesClientImpl(
     }
 
     override suspend fun fetchUserProfile(userId: String) = sendRequest { service.fetchUserProfile(userId) }
+
+    override suspend fun getLatestFirmwareVersion(): Flow<FirmwareVersion> =
+        sendRequest { service.getLatestFirmwareVersion() }
 
     private suspend fun <T> sendRequest(request: suspend () -> T?): Flow<T> {
         return flow {

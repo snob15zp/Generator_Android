@@ -36,12 +36,21 @@
     <string name="percent_value">%1$d%%</string>
     <string name="download_folder_error">Unable to download folder.</string>
     <string name="action_import">Importing…</string>
+    <string name="action_reboot">Rebooting…</string>
     <string name="error_file_transfer">Data transmission error</string>
     <string name="import_success">Import finished successfully</string>
     <string name="done">Done</string>
     <string name="import_folder">Import folder</string>
     <string name="flash_firmware">Flash firmware</string>
     <string name="error_bluetooth_disabled">Bluetooth is disabled</string>
+    <string name="latest_version">Latest version:</string>
+    <string name="device_version">Device version</string>
+    <string name="update">Update</string>
+    <string name="it_is_already_latest_version">It is already latest version</string>
+    <string name="error_get_latest_version">Can\'t get the latest version from the server</string>
+    <string name="flash">Flash</string>
+    <string name="version_unavailable">Unavailable</string>
+    <string name="last_updated_at">Last updated at: %s</string>
 
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>

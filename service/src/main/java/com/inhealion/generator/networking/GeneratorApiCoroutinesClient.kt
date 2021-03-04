@@ -3,10 +3,7 @@ package com.inhealion.generator.networking
 import android.content.Context
 import com.inhealion.generator.model.Result
 import com.inhealion.generator.networking.account.AccountStore
-import com.inhealion.generator.networking.api.model.Folder
-import com.inhealion.generator.networking.api.model.Program
-import com.inhealion.generator.networking.api.model.User
-import com.inhealion.generator.networking.api.model.UserProfile
+import com.inhealion.generator.networking.api.model.*
 import com.inhealion.generator.networking.internal.GeneratorApiCoroutinesClientImpl
 import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
@@ -24,6 +21,8 @@ interface GeneratorApiCoroutinesClient {
     suspend fun logout(): Flow<Unit>
 
     suspend fun fetchUserProfile(userId: String): Flow<UserProfile>
+
+    suspend fun getLatestFirmwareVersion(): Flow<FirmwareVersion>
 
     companion object {
         private var instance: GeneratorApiCoroutinesClient? = null

@@ -9,6 +9,7 @@ import androidx.fragment.app.FragmentResultListener
 import androidx.navigation.fragment.navArgs
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportFragmentBinding
+import com.inhealion.generator.extension.observe
 import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.presentation.device.viewmodel.ImportViewModel
@@ -27,7 +28,6 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
     private val fragmentResultListener = FragmentResultListener { key, result ->
         when (key) {
-            CONNECT_REQUEST_KEY -> handleConnectionResult(result)
             ERROR_DIALOG_REQUEST_KEY -> back()
         }
     }
@@ -37,7 +37,6 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        parentFragmentManager.setFragmentResultListener(CONNECT_REQUEST_KEY, viewLifecycleOwner, fragmentResultListener)
         parentFragmentManager.setFragmentResultListener(
             ERROR_DIALOG_REQUEST_KEY,
             viewLifecycleOwner,
@@ -52,7 +51,10 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         }
 
         with(viewModel) {
-            showDiscovery.observe(viewLifecycleOwner) { DiscoveryDialogFragment.show(parentFragmentManager) }
+            showDiscovery.observe(viewLifecycleOwner) {
+                DiscoveryDialogFragment.show(parentFragmentManager)
+                    .observe(CONNECT_REQUEST_KEY, viewLifecycleOwner, ::handleConnectionResult)
+            }
             state.observe(viewLifecycleOwner) { switchState(it) }
             currentAction.observe(viewLifecycleOwner) { binding.actionTextView.text = it }
             currentProgress.observe(viewLifecycleOwner) { handleProgressChanged(it) }

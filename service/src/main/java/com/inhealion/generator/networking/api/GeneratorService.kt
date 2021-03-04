@@ -27,4 +27,7 @@ interface GeneratorService {
 
     @PUT("/api/users/refresh")
     suspend fun refreshToken(): RefreshToken?
+
+    @GET("/api/firmware/latest")
+    suspend fun getLatestFirmwareVersion(): FirmwareVersion
 }

@@ -61,6 +61,7 @@
         style="@style/ProgressBar.Medium"
         android:layout_width="120dp"
         android:layout_height="120dp"
+        android:indeterminateDrawable="@drawable/progress_bg"
         android:elevation="2dp"
         android:indeterminate="true"
         app:layout_constraintBottom_toBottomOf="parent"

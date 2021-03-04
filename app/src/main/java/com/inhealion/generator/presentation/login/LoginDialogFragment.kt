@@ -1,18 +1,12 @@
 package com.inhealion.generator.presentation.login
 
-import android.app.Dialog
 import android.content.DialogInterface
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
-import android.widget.RelativeLayout
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import com.inhealion.generator.databinding.LoginFragmentBinding
 import com.inhealion.generator.extension.hideKeyboard
@@ -71,14 +65,14 @@ class LoginDialogFragment : FullscreenDialogFragment<LoginFragmentBinding>() {
     override fun onDismiss(dialog: DialogInterface) {
         parentFragmentManager.setFragmentResult(
             LOGIN_REQUEST_KEY,
-            bundleOf(RESULT_KEY to (viewModel.state.value is State.Success))
+            bundleOf(RESULT_KEY to viewModel.isLoginSuccess)
         )
         super.onDismiss(dialog)
     }
 
     companion object {
-        fun show(fragmentManager: FragmentManager) {
-            LoginDialogFragment().show(fragmentManager, "LoginDialogFragment")
-        }
+        fun show(fragmentManager: FragmentManager) =
+            LoginDialogFragment().also { it.show(fragmentManager, "LoginDialogFragment") }
+
     }
 }

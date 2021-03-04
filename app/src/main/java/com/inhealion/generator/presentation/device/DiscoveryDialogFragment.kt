@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.inhealion.generator.R
@@ -136,13 +137,14 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
     }
 
     companion object {
-        fun show(fragmentManager: FragmentManager, target: Fragment? = null) {
+        fun show(fragmentManager: FragmentManager, target: Fragment? = null): DialogFragment {
             target?.let { require(it is DiscoveryDialogListener) }
-            DiscoveryDialogFragment()
+            return DiscoveryDialogFragment()
                 .apply {
                     setTargetFragment(target, -1)
+                }.also {
+                    it.show(fragmentManager, "DiscoveryDialogFragment")
                 }
-                .show(fragmentManager, "DiscoveryDialogFragment")
         }
     }
 

@@ -1,14 +1,12 @@
 package com.inhealion.generator.presentation.main.viewmodel
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.liveData
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.service.SharedPrefManager
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.internal.ChannelFlow
 import kotlinx.coroutines.launch
 
@@ -18,16 +16,17 @@ class MainViewModel(
     private val sharedPrefManager: SharedPrefManager
 ) : ViewModel() {
 
-    val action = MutableLiveData<Action>()
+    private val _action = Channel<Action>()
+    val action: LiveData<Action> get() = _action.consumeAsFlow().asLiveData(viewModelScope.coroutineContext)
 
     fun navigate() = viewModelScope.launch {
         when {
-            accountStore.load() == null -> action.postValue(Action.ShowLogin)
+            accountStore.load() == null -> _action.send(Action.ShowLogin)
             (deviceRepository.get().valueOrNull() == null && !sharedPrefManager.isDiscoveryWasShown) -> {
                 sharedPrefManager.isDiscoveryWasShown = true
-                action.postValue(Action.ShowDeviceConnection)
+                _action.send(Action.ShowDeviceConnection)
             }
-            else -> action.postValue(Action.ShowFolders)
+            else -> _action.send(Action.ShowFolders)
         }
     }
 

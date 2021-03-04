@@ -8,7 +8,8 @@ import com.inhealion.generator.presentation.login.LoginViewModel
 import com.inhealion.generator.presentation.main.viewmodel.MainViewModel
 import com.inhealion.generator.presentation.programs.viewmodel.FolderViewModel
 import com.inhealion.generator.presentation.programs.viewmodel.ProgramsViewModel
-import com.inhealion.generator.presentation.settings.SettingsViewModel
+import com.inhealion.generator.presentation.settings.viewmodel.FirmwareViewModel
+import com.inhealion.generator.presentation.settings.viewmodel.SettingsViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -20,4 +21,5 @@ val viewModelModule = module {
     viewModel { (importAction: ImportAction) -> ImportViewModel(importAction, get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get(), get()) }
     viewModel { MainViewModel(get(), get(), get()) }
+    viewModel { FirmwareViewModel(get(), get(), get(), get(), get()) }
 }

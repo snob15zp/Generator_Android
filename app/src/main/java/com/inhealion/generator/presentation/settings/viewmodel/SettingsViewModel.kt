@@ -1,4 +1,4 @@
-package com.inhealion.generator.presentation.settings
+package com.inhealion.generator.presentation.settings.viewmodel
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel

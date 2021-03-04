@@ -12,7 +12,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: SettingsActivityBinding
 
-    val toolbar: Toolbar get() = binding.toolbar.root
+    val toolbar: Toolbar get() = binding.toolbar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

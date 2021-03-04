@@ -15,12 +15,21 @@ class LoginViewModel(
     private val apiErrorStringProvider: ApiErrorStringProvider
 ) : BaseViewModel<User>() {
 
+    var isLoginSuccess: Boolean = false
+        private set
+
     fun signIn(login: String, password: String) {
         viewModelScope.launch {
             postState(State.InProgress())
             authorizationManager.signIn(login, password)
-                .catch { postState(State.Failure(apiErrorStringProvider.getErrorMessage(it))) }
-                .collect { postState(State.Success(it)) }
+                .catch {
+                    isLoginSuccess = false
+                    postState(State.Failure(apiErrorStringProvider.getErrorMessage(it)))
+                }
+                .collect {
+                    isLoginSuccess = true
+                    postState(State.Success(it))
+                }
         }
     }
 }

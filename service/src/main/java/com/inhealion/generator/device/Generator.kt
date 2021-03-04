@@ -1,8 +1,9 @@
 package com.inhealion.generator.device
 
+import android.R.bool
 import kotlinx.coroutines.flow.Flow
-import java.io.ByteArrayInputStream
 import java.io.Closeable
+
 
 interface Generator: Closeable {
     /**
@@ -45,6 +46,16 @@ interface Generator: Closeable {
      *  <returns>True если операция успешна</returns>
      **/
     fun putFile(fileName: String, content: ByteArray): ErrorCodes
+
+    /**
+     * Запускает записанную прошивку
+     */
+    fun bootloaderRunMcuFw(): Boolean
+
+    /**
+     * Загрузка одной страницы прошивки (chunk из xml файла)
+     */
+    fun bootloaderUploadMcuFwChunk(chunk: ByteArray): Boolean
 
     /**
      *  Выполняется по записи части файла, для обновления отображения процесса

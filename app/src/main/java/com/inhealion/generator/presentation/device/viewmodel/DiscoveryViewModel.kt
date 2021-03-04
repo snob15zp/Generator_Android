@@ -1,5 +1,6 @@
 package com.inhealion.generator.presentation.device.viewmodel
 
+import android.bluetooth.BluetoothAdapter
 import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.R
 import com.inhealion.generator.data.repository.DeviceRepository
@@ -39,6 +40,11 @@ class DiscoveryViewModel(
     fun start() {
         list.clear()
         isDeviceSelected = false
+
+        if (BluetoothAdapter.getDefaultAdapter()?.isEnabled != true) {
+            postState(State.Failure(stringProvider.getString(R.string.error_bluetooth_disabled)))
+            return
+        }
 
         viewModelScope.launch {
             postState(State.InProgress())

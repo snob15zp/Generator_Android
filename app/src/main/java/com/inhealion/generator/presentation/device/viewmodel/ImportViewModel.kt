@@ -6,6 +6,7 @@ import com.inhealion.generator.R
 import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.device.DeviceConnectionFactory
 import com.inhealion.generator.device.ErrorCodes
+import com.inhealion.generator.device.Generator
 import com.inhealion.generator.lifecyle.ActionLiveData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.ApiError
@@ -18,7 +19,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserFactory
 import timber.log.Timber
+import java.io.ByteArrayInputStream
 import java.io.File
 
 class ImportViewModel(
@@ -47,7 +51,7 @@ class ImportViewModel(
             val files = try {
                 when (importAction) {
                     is ImportAction.ImportFolder -> importFolder(importAction.folderId)
-                    ImportAction.UpdateFirmware -> emptyMap()
+                    is ImportAction.UpdateFirmware -> importFirmware(importAction.version)
                 }
             } catch (e: ApiError) {
                 postState(State.Failure(apiErrorStringProvider.getErrorMessage(e)))
@@ -72,18 +76,15 @@ class ImportViewModel(
                         postState(State.InProgress((importedSize * 100) / totalSize))
                     }.launchIn(viewModelScope)
 
-                    files.filter { it.key.endsWith(".txt") }.forEach { (name, data) ->
-                        if (generator.putFile(name, data) != ErrorCodes.NO_ERROR) {
-                            postState(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
-                            return@launch
-                        }
-                    }
-                    files.filter { it.key.endsWith(".pls") }.forEach { (name, data) ->
-                        if (generator.putFile(name, data) != ErrorCodes.NO_ERROR) {
-                            postState(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
-                            return@launch
-                        }
-                    }
+                    importFwFile(generator, files) ?: return@launch
+
+                    importByExt(generator, files, "rbf") ?: return@launch
+                    importByExt(generator, files, "srec") ?: return@launch
+                    importByExt(generator, files, "bin") ?: return@launch
+
+                    importByExt(generator, files, "txt") ?: return@launch
+                    importByExt(generator, files, "pls") ?: return@launch
+
                     println("RRR > finished")
                     postState(State.success())
                 }
@@ -98,6 +99,42 @@ class ImportViewModel(
 
     fun cancel() {
 
+    }
+
+    private fun importByExt(generator: Generator, files: Map<String, ByteArray>, ext: String): Int? {
+        var total = 0
+        files.filter { it.key.endsWith(".$ext") }
+            .forEach { (name, data) ->
+                if (generator.putFile(name, data) != ErrorCodes.NO_ERROR) {
+                    postState(State.Failure(stringProvider.getString(R.string.error_file_transfer)))
+                    return null
+                }
+                total++
+            }
+        return total
+    }
+
+    private fun importFwFile(generator: Generator, files: Map<String, ByteArray>): Int? {
+        var total = 0
+        val parser = XmlPullParserFactory.newInstance().newPullParser()
+        files.filter { it.key.endsWith(".bf") }.forEach { (name, data) ->
+            parser.setInput(ByteArrayInputStream(data), null)
+            var eventType = parser.eventType
+            while(eventType != XmlPullParser.END_DOCUMENT) {
+                when(eventType) {
+                    XmlPullParser.START_TAG -> Unit
+                    XmlPullParser.END_TAG -> Unit
+                    XmlPullParser.TEXT -> Unit
+                }
+                eventType = parser.next()
+            }
+        }
+
+        return total
+    }
+
+    private suspend fun importFirmware(version: String): Map<String, ByteArray> {
+        return mapOf()
     }
 
     private suspend fun importFolder(folderId: String): Map<String, ByteArray> {

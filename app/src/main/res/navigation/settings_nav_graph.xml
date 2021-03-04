@@ -8,11 +8,11 @@
         android:name="com.inhealion.generator.presentation.settings.SettingsFragment"
         android:label="SettingsFragment" >
         <action
-            android:id="@+id/action_settingsFragment_to_discoveryFragment2"
-            app:destination="@id/settingsDiscoveryFragment" />
+            android:id="@+id/action_settingsFragment_to_firmwareFragment"
+            app:destination="@id/firmwareFragment" />
     </fragment>
     <fragment
-        android:id="@+id/settingsDiscoveryFragment"
-        android:name="com.inhealion.generator.presentation.device.DiscoveryDialogFragment"
-        android:label="DiscoveryFragment" />
+        android:id="@+id/firmwareFragment"
+        android:name="com.inhealion.generator.presentation.settings.FirmwareFragment"
+        android:label="FirmwareFragment" />
 </navigation>

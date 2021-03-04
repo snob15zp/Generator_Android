@@ -143,6 +143,16 @@ class GenG070V1(address: String) : Generator {
         }
     }
 
+    override fun bootloaderRunMcuFw(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun bootloaderUploadMcuFwChunk(chunk: ByteArray): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun close() = modbusMasterRTU.disconnect()
+
     private suspend fun writeChunk(data: IntArray) {
         repeat(3) {
             try {
@@ -159,8 +169,6 @@ class GenG070V1(address: String) : Generator {
             }
         }
     }
-
-    override fun close() = modbusMasterRTU.disconnect()
 
     companion object {
         private const val SERVICE_UUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455"

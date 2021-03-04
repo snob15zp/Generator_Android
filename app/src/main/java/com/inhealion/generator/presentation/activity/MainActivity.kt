@@ -9,6 +9,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ActivityMainBinding
+import com.inhealion.generator.extension.observe
 import com.inhealion.generator.extension.setFragmentResultListener
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
 import com.inhealion.generator.presentation.login.LoginDialogFragment
@@ -24,20 +25,10 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by viewModel()
 
-    private val fragmentResultListener = { key: String, result: Bundle ->
-        when (key) {
-            LOGIN_REQUEST_KEY -> handleLoginResult(result)
-            CONNECT_REQUEST_KEY -> handleConnectionResult(result)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        setFragmentResultListener(LOGIN_REQUEST_KEY, fragmentResultListener)
-        setFragmentResultListener(CONNECT_REQUEST_KEY, fragmentResultListener)
 
         with(viewModel) {
             action.observe(this@MainActivity) {
@@ -65,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun launchConnectionDialog() {
         DiscoveryDialogFragment.show(supportFragmentManager)
+            .observe(CONNECT_REQUEST_KEY, this, ::handleConnectionResult)
     }
 
     private fun navigateToFolders() {
@@ -77,5 +69,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun launchLoginDialog() {
         LoginDialogFragment.show(supportFragmentManager)
+            .observe(LOGIN_REQUEST_KEY, this, ::handleLoginResult)
     }
 }

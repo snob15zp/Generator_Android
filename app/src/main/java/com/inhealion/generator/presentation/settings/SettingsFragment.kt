@@ -1,19 +1,15 @@
 package com.inhealion.generator.presentation.settings
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat.finishAffinity
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.inhealion.generator.R
-import com.inhealion.generator.presentation.activity.ImportActivity
-import com.inhealion.generator.presentation.activity.MainActivity
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
-import com.inhealion.generator.presentation.device.ImportAction
-import com.inhealion.generator.presentation.device.ImportFragmentArgs
+import com.inhealion.generator.presentation.settings.viewmodel.SettingsViewModel
 import com.inhealion.generator.service.AuthorizationManager
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -41,11 +37,7 @@ class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.Dis
         }
 
         findPreference<Preference>("firmware")?.setOnPreferenceClickListener {
-            startActivity(
-                Intent(requireContext(), ImportActivity::class.java).apply {
-                    putExtras(ImportFragmentArgs(ImportAction.UpdateFirmware).toBundle())
-                }
-            )
+            findNavController().navigate(SettingsFragmentDirections.actionSettingsFragmentToFirmwareFragment())
             true
         }
 
@@ -89,8 +81,6 @@ class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.Dis
     private fun setupToolbar() {
         requireActivity().findViewById<Toolbar>(R.id.toolbar).apply {
             title = context.getString(R.string.settings_title)
-            menu.findItem(R.id.menu_info_action).isVisible = false
-            setNavigationIcon(R.drawable.ic_baseline_arrow_back_24)
             setNavigationOnClickListener { requireActivity().finish() }
         }
     }

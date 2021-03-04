@@ -4,32 +4,31 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="@dimen/half_margin"
-    android:layout_marginBottom="@dimen/half_margin">
+    android:minHeight="56dp">
 
     <ImageView
         android:id="@android:id/icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/default_margin"
-        app:layout_constraintBottom_toBottomOf="@android:id/summary"
-        app:layout_constraintEnd_toStartOf="@android:id/title"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@android:id/title"
+        app:layout_constraintTop_toTopOf="parent"
         tools:src="@drawable/ic_baseline_logout_24" />
 
     <TextView
         android:id="@android:id/title"
-        android:layout_width="0dp"
+        android:layout_width="363dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/half_margin"
         android:fontFamily="@font/roboto_regular"
         android:textColor="@color/textColor"
         android:textSize="@dimen/font_size_major"
         app:layout_constraintBottom_toTopOf="@android:id/summary"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@android:id/icon"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
         tools:text="Item title" />
 
     <TextView
@@ -39,6 +38,7 @@
         android:fontFamily="@font/roboto_regular"
         android:textColor="@color/secondaryTextColor"
         android:textSize="@dimen/font_size_normal"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@android:id/title"
         app:layout_constraintTop_toBottomOf="@android:id/title"
         tools:text="Basic" />
@@ -47,11 +47,7 @@
         android:id="@+id/settings_item_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginStart="@dimen/default_margin"
-        android:layout_marginTop="4dp"
         android:background="@color/color_divider"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@android:id/summary" />
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
