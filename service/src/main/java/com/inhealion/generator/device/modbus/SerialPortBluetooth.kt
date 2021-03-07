@@ -6,7 +6,6 @@ import com.intelligt.modbus.jlibmodbus.serial.SerialPort
 import com.juul.kable.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.*
 import okio.ByteString.Companion.toByteString
 import timber.log.Timber
@@ -14,7 +13,6 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 
-@ExperimentalCoroutinesApi
 class SerialPortBluetooth(
     sp: SerialParameters,
     private val writeCharacteristic: Characteristic,
@@ -71,6 +69,7 @@ class SerialPortBluetooth(
         peripheral.observe(writeCharacteristic).onEach {
             println("TTT > read data from read characteristics: ${it.toByteString()}")
             val data = unescapeBytes(it)
+            println("TTT > read data ${data.size}, ${buffer.position()} ${writePosition.get()}, $readPosition")
             buffer.put(data)
             writePosition.addAndGet(data.size)
             stateFlow.emit(DeviceState.READ)
@@ -152,7 +151,7 @@ class SerialPortBluetooth(
 
 
     private fun clearReadBufferIfNeeded() {
-        if (readPosition == writePosition.get()) {
+        if (readPosition >= writePosition.get()) {
             println("TTT > read end")
             readPosition = 0
             writePosition.set(0)
@@ -161,13 +160,15 @@ class SerialPortBluetooth(
     }
 
     override fun close() {
-        buffer.clear()
-
         runBlocking {
-            scope.cancel()
             peripheral?.disconnect()
             peripheral = null
+            scope.cancel()
         }
+
+        readPosition = 0
+        writePosition.set(0)
+        buffer.clear()
     }
 
     override fun isOpened() = peripheral != null
@@ -195,7 +196,7 @@ class SerialPortBluetooth(
     }
 
     companion object {
-        private val WRITE_ESCAPE_BYTES = arrayOf<Byte>(0x1b, 0x25)
-        private const val ESCAPE_CTRL: Byte = 0x1b
+        val WRITE_ESCAPE_BYTES = arrayOf<Byte>(0x1b, 0x25)
+        const val ESCAPE_CTRL: Byte = 0x1b
     }
 }

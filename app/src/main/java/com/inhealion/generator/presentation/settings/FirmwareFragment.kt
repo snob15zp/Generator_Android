@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.isVisible
 import com.inhealion.generator.R
@@ -14,8 +15,11 @@ import com.inhealion.generator.databinding.FirmwareFragmentBinding
 import com.inhealion.generator.extension.observe
 import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
+import com.inhealion.generator.presentation.activity.ImportActivity
 import com.inhealion.generator.presentation.activity.SettingsActivity
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
+import com.inhealion.generator.presentation.device.ImportAction
+import com.inhealion.generator.presentation.device.ImportFragmentArgs
 import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
@@ -40,9 +44,23 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
                     .observe(CONNECT_REQUEST_KEY, viewLifecycleOwner, ::handleConnectionResult)
             }
             state.observe(viewLifecycleOwner, ::switchState)
-
             load()
         }
+
+        binding.forceFlashButton.setOnClickListener { flash() }
+        binding.updateButton.setOnClickListener { flash() }
+    }
+
+    private fun flash() {
+        val version = viewModel.latestVersion ?: run {
+            Toast.makeText(requireContext(), getString(R.string.error_invalid_version), Toast.LENGTH_LONG).show()
+            return
+        }
+        startActivity(
+            Intent(requireContext(), ImportActivity::class.java).apply {
+                putExtras(ImportFragmentArgs(ImportAction.UpdateFirmware(version)).toBundle())
+            }
+        )
     }
 
     override fun setupToolbar(toolbar: Toolbar) = with(toolbar) {
@@ -93,6 +111,7 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
 
                 noUpdateTextView.isVisible = !state.data.isUpdateRequired && state.data.deviceVersion != null
                 updateButton.isVisible = state.data.isUpdateRequired && state.data.deviceVersion != null
+                forceFlashButton.isVisible = !state.data.isUpdateRequired && state.data.deviceVersion != null
             }
         }
     }

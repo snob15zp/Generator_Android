@@ -25,6 +25,7 @@ class FirmwareViewModel(
 ) : BaseViewModel<VersionInfo>() {
 
     val showDiscovery = ActionLiveData()
+    var latestVersion: String? = null
 
     fun load(forceReload: Boolean = false) = viewModelScope.launch {
         postState(State.Idle)
@@ -42,6 +43,7 @@ class FirmwareViewModel(
 
         if (!forceReload) {
             versionInfoRepository.get().valueOrNull()?.let {
+                latestVersion = it.latestVersion
                 postState(State.Success(it))
                 return@launch
             }
@@ -58,6 +60,7 @@ class FirmwareViewModel(
                     postState(State.Failure(errorMessage))
                     null
                 }
+                latestVersion = firmwareVersion.version
                 VersionInfo(firmwareVersion.version, deviceVersion, Date()).also { versionInfoRepository.save(it) }
             }
             .collect { postState(State.Success(it)) }

@@ -4,9 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentResultListener
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportFragmentBinding
 import com.inhealion.generator.extension.observe
@@ -34,6 +36,14 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
     private val viewModel: ImportViewModel by viewModel { parametersOf(navArgs<ImportFragmentArgs>().value.importAction) }
 
+    private val dialog: AlertDialog by lazy {
+        MaterialAlertDialogBuilder(requireContext())
+            .setMessage(R.string.import_was_canceled)
+            .setNegativeButton(R.string.button_no) { _, _ -> back() }
+            .setPositiveButton(R.string.button_yes) { _, _ -> viewModel.import() }
+            .create()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -47,7 +57,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         binding.closeImage.setOnClickListener { back() }
         binding.titleTextView.text = when (viewModel.importAction) {
             is ImportAction.ImportFolder -> getString(R.string.import_folder)
-            ImportAction.UpdateFirmware -> getString(R.string.flash_firmware)
+            is ImportAction.UpdateFirmware -> getString(R.string.flash_firmware)
         }
 
         with(viewModel) {
@@ -59,13 +69,31 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
             currentAction.observe(viewLifecycleOwner) { binding.actionTextView.text = it }
             currentProgress.observe(viewLifecycleOwner) { handleProgressChanged(it) }
 
-            import()
+
+            if (savedInstanceState?.getBoolean("IS_CANCELED") == true) {
+                dialog.show()
+            } else {
+                import()
+            }
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onResume() {
+        super.onResume()
+        if (viewModel.isCanceled) {
+            dialog.show()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
         viewModel.cancel()
+        dialog.dismiss()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("IS_CANCELED", viewModel.isCanceled)
     }
 
     private fun handleProgressChanged(progress: Int?) {
@@ -106,8 +134,8 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
                 binding.progressCircular.isIndeterminate = state.progress < 0
                 binding.progressCircular.progress = state.progress
 
-                binding.progressTextView.isVisible = state.progress > 0
-                binding.progressTextView.text = if (state.progress > 0) {
+                binding.progressTextView.isVisible = state.progress >= 0
+                binding.progressTextView.text = if (state.progress >= 0) {
                     getString(R.string.percent_value, state.progress)
                 } else null
             }

@@ -91,12 +91,6 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
         }.sortedBy { it.expiredAt.time })
     }
 
-    private fun showUserProfileControls(show: Boolean) = with(binding) {
-        phoneTextView.isVisible = show
-        addressTextView.isVisible = show
-        emailTextView.isVisible = show
-    }
-
     private fun bindUserProfile(userProfile: UserProfile) = with(binding) {
         nameTextView.text = stringProvider.getString(
             R.string.name_pattern,

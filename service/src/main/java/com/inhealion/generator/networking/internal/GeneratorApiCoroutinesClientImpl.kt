@@ -6,20 +6,15 @@ import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.api.model.FirmwareVersion
 import com.inhealion.generator.networking.api.model.User
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runInterruptible
-import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
 import retrofit2.HttpException
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipInputStream
-import kotlin.jvm.Throws
 
 internal class GeneratorApiCoroutinesClientImpl(
     baseUrl: String,
@@ -42,23 +37,15 @@ internal class GeneratorApiCoroutinesClientImpl(
             ?: throw ApiError.ServerError(404, "Resource not found")
     }
         .catch { throw handleError(it) }
-        .map { responseBody ->
-            val folder = File(downloadFolder, folderId)
-            if (folder.exists()) folder.deleteRecursively()
-            folder.mkdirs()
+        .map { extractFiles(it, folderId) }
 
-            ZipInputStream(responseBody.byteStream()).use { zipInputStream ->
-                var entry = zipInputStream.nextEntry
-                runCatching {
-                    while (entry != null) {
-                        FileOutputStream(File(folder, entry.name)).use { zipInputStream.copyTo(it) }
-                        zipInputStream.closeEntry()
-                        entry = zipInputStream.nextEntry
-                    }
-                }
-            }
-            folder.absolutePath
-        }
+    override suspend fun downloadFirmware(version: String) = flow {
+        service.downloadFirmware(version)
+            ?.let { emit(it) }
+            ?: throw ApiError.ServerError(404, "Resource not found")
+    }
+        .catch { throw handleError(it) }
+        .map { extractFiles(it, version) }
 
     override suspend fun logout(): Flow<Unit> = flow {
         accountStore.remove()
@@ -70,6 +57,22 @@ internal class GeneratorApiCoroutinesClientImpl(
 
     override suspend fun getLatestFirmwareVersion(): Flow<FirmwareVersion> =
         sendRequest { service.getLatestFirmwareVersion() }
+
+    private fun extractFiles(responseBody: ResponseBody, name: String): String {
+        val folder = File(downloadFolder, name)
+        if (folder.exists()) folder.deleteRecursively()
+        folder.mkdirs()
+
+        ZipInputStream(responseBody.byteStream()).use { zipInputStream ->
+            var entry = zipInputStream.nextEntry
+            while (entry != null) {
+                FileOutputStream(File(folder, entry.name)).use { zipInputStream.copyTo(it) }
+                zipInputStream.closeEntry()
+                entry = zipInputStream.nextEntry
+            }
+        }
+        return folder.absolutePath
+    }
 
     private suspend fun <T> sendRequest(request: suspend () -> T?): Flow<T> {
         return flow {

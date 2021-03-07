@@ -143,15 +143,20 @@ class GenG070V1(address: String) : Generator {
         }
     }
 
-    override fun bootloaderRunMcuFw(): Boolean {
-        TODO("Not yet implemented")
+    override fun reboot(): Boolean {
+        return try {
+            modbusMasterRTU.setResponseTimeout(1500)
+            modbusMasterRTU.writeSingleRegister(SERVER_ADDRESS, 0x20, 1.shl(7))
+            true
+        } catch (e: Exception) {
+            Timber.e(e, "Unable to reboot")
+            false
+        }
     }
 
-    override fun bootloaderUploadMcuFwChunk(chunk: ByteArray): Boolean {
-        TODO("Not yet implemented")
+    override fun close() {
+        modbusMasterRTU.disconnect()
     }
-
-    override fun close() = modbusMasterRTU.disconnect()
 
     private suspend fun writeChunk(data: IntArray) {
         repeat(3) {
@@ -179,7 +184,7 @@ class GenG070V1(address: String) : Generator {
         /**
          * Максимальный передаваемый юнит
          **/
-        private const val MAX_ITEM_SIZE = 140
+        private const val MAX_ITEM_SIZE = 136
 
         /**
          * Максимальный размер названия файла

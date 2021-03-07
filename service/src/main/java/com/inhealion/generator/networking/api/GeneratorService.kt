@@ -19,6 +19,10 @@ interface GeneratorService {
     @GET("/api/folders/{id}/download")
     suspend fun downloadFolder(@Path("id") folderId: String): ResponseBody?
 
+    @Streaming
+    @GET("/api/firmware/{version}/download")
+    suspend fun downloadFirmware(@Path("version") version: String): ResponseBody?
+
     @POST("/api/users/logout")
     suspend fun logout()
 

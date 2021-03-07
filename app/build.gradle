@@ -14,7 +14,6 @@ android {
         debug keystore.debugSigningConfigs
     }
 
-
     defaultConfig {
         applicationId "com.inhealion.generator"
         minSdkVersion 23
@@ -31,11 +30,20 @@ android {
         viewBinding true
     }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            debuggable true
+        }
+
         release {
-            minifyEnabled false
+            debuggable true
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8

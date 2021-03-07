@@ -1,5 +1,6 @@
 package com.inhealion.generator.device.internal
 
+import com.inhealion.generator.device.modbus.SerialPortBluetooth.Companion.WRITE_ESCAPE_BYTES
 import com.intelligt.modbus.jlibmodbus.utils.DataUtils
 import java.io.File
 import java.nio.ByteBuffer
@@ -35,18 +36,22 @@ class Lfov(
         }
 
         var idx = position
-        var payloadSz = 0
-        while (payloadSz < min(maxPayloadSize - truncatedFileName.length - 4 - 1, content.size - position)) {
-            payloadSz += if(content[idx] == 0x25.toByte() || content[idx] == 0x1b.toByte()) 2 else 1
+        var sum = 0
+        while (sum < min(maxPayloadSize - truncatedFileName.length - 4 - 1, content.size - position)) {
+            sum += if (content[idx] in WRITE_ESCAPE_BYTES) 2 else 1
             idx++
         }
+        val payloadSz = idx - position
+        var pktSz: Int = 1 + truncatedFileName.length + 4 + payloadSz
+        val isPacketSizeOdd = pktSz % 2 == 1
+        if (isPacketSizeOdd) pktSz += 1
 
-        val output = ByteBuffer.allocate(maxPayloadSize).apply { order(ByteOrder.LITTLE_ENDIAN) }
-        val pktSz: Int = 1 + truncatedFileName.length + 4 + payloadSz
+        println("TTT > Allocate buffer: $position, $payloadSz, $pktSz, $maxPayloadSize, ${content.size}")
+        val output = ByteBuffer.allocate(pktSz).apply { order(ByteOrder.LITTLE_ENDIAN) }
 
-        output.put((if (pktSz % 2 == 1) truncatedFileName.length + 1 else truncatedFileName.length).toByte())
+        output.put((if (isPacketSizeOdd) truncatedFileName.length + 1 else truncatedFileName.length).toByte())
         output.put(truncatedFileName.toByteArray(Charsets.US_ASCII))
-        if (pktSz % 2 == 1) output.put(0)
+        if (isPacketSizeOdd) output.put(0)
 
         var ptrFlags = position
         if ((content.size - position) <= payloadSz) {
@@ -60,8 +65,7 @@ class Lfov(
         position += payloadSz
 
         val result = output.array()
-        println("TTT > copy of range: $position, $payloadSz, $pktSz, ${result.size}")
-        return DataUtils.BeToIntArray(result.copyOfRange(0, if (pktSz % 2 == 0) pktSz else pktSz + 1))
+        return DataUtils.BeToIntArray(result.copyOfRange(0, pktSz))
     }
 
     companion object {

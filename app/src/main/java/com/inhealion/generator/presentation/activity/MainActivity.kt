@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
 
         with(viewModel) {
             action.observe(this@MainActivity) {
+                println("TTT > action $it")
                 when (it) {
                     MainViewModel.Action.ShowDeviceConnection -> launchConnectionDialog()
                     MainViewModel.Action.ShowFolders -> navigateToFolders()

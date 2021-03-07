@@ -51,6 +51,13 @@
     <string name="flash">Flash</string>
     <string name="version_unavailable">Unavailable</string>
     <string name="last_updated_at">Last updated at: %s</string>
+    <string name="force_flash">Force flash</string>
+    <string name="error_invalid_version">Version is invalid</string>
+    <string name="action_import_mcu_firmware">Import MCU firmware…</string>
+
+    <string name="import_was_canceled">The file transfer process was interrupted.\nStart transfer again?</string>
+    <string name="button_no">No</string>
+    <string name="button_yes">Yes</string>
 
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>

@@ -18,6 +18,8 @@ interface GeneratorApiCoroutinesClient {
 
     suspend fun downloadFolder(folderId: String): Flow<String>
 
+    suspend fun downloadFirmware(version: String): Flow<String>
+
     suspend fun logout(): Flow<Unit>
 
     suspend fun fetchUserProfile(userId: String): Flow<UserProfile>
