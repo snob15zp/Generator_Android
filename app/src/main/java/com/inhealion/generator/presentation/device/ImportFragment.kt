@@ -85,8 +85,8 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onStop() {
+        super.onStop()
         viewModel.cancel()
         dialog.dismiss()
     }
