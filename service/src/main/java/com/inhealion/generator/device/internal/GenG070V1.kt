@@ -1,6 +1,7 @@
 package com.inhealion.generator.device.internal
 
 import com.inhealion.generator.device.ErrorCodes
+import com.inhealion.generator.device.FileImport
 import com.inhealion.generator.device.Generator
 import com.inhealion.service.BuildConfig
 import com.intelligt.modbus.jlibmodbus.Modbus
@@ -35,8 +36,8 @@ class GenG070V1(address: String) : Generator {
 
     private val modbusMasterRTU: ModbusMaster
 
-    private val _fileImportProgress = Channel<Int>()
-    override val fileImportProgress: Flow<Int> get() = _fileImportProgress.consumeAsFlow()
+    private val _fileImportProgress = Channel<FileImport>()
+    override val fileImportProgress: Flow<FileImport> get() = _fileImportProgress.consumeAsFlow()
 
     init {
         Modbus.setLogLevel(if (BuildConfig.DEBUG) Modbus.LogLevel.LEVEL_DEBUG else Modbus.LogLevel.LEVEL_RELEASE)
@@ -134,7 +135,9 @@ class GenG070V1(address: String) : Generator {
             Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
                 println("TTT > ---- write chunk ${it.size}")
                 runBlocking { writeChunk(it) }
-                _fileImportProgress.offer(it.size * 2 - it[0].shr(8).and(0xff) - 4 - 1)
+                _fileImportProgress.offer(
+                    FileImport(fileName, it.size * 2 - it[0].shr(8).and(0xff) - 4 - 1)
+                )
             }
             ErrorCodes.NO_ERROR
         } catch (e: Exception) {
@@ -155,6 +158,7 @@ class GenG070V1(address: String) : Generator {
     }
 
     override fun close() {
+        _fileImportProgress.close()
         modbusMasterRTU.disconnect()
     }
 
