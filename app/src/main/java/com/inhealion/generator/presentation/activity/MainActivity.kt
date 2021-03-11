@@ -1,7 +1,9 @@
 package com.inhealion.generator.presentation.activity
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import androidx.navigation.NavOptions
 import androidx.navigation.createGraph
 import androidx.navigation.findNavController
@@ -18,6 +20,7 @@ import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
 import com.inhealion.generator.presentation.main.MainFragmentDirections
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.inhealion.generator.presentation.main.viewmodel.MainViewModel
+import com.inhealion.generator.service.ImportService
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +32,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        ImportService.enqueueWork(this, Intent(this, ImportService::class.java))
 
         with(viewModel) {
             action.observe(this@MainActivity) {

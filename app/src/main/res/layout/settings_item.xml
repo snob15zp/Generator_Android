@@ -8,8 +8,8 @@
 
     <ImageView
         android:id="@android:id/icon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_marginStart="@dimen/default_margin"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -18,10 +18,11 @@
 
     <TextView
         android:id="@android:id/title"
-        android:layout_width="363dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:fontFamily="@font/roboto_regular"
         android:textColor="@color/textColor"
+        android:layout_marginStart="@dimen/half_margin"
         android:textSize="@dimen/font_size_major"
         app:layout_constraintBottom_toTopOf="@android:id/summary"
         app:layout_constraintEnd_toEndOf="parent"
