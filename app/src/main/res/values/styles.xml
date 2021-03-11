@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="ToolBarAppearanceStyle" parent="TextAppearance.AppCompat.Widget.ActionBar.Menu">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="AppTheme.ToolBar" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="android:background">@color/colorPrimary</item>
+        <item name="actionMenuTextAppearance">@style/ToolBarAppearanceStyle</item>
+        <item name="android:actionMenuTextColor">@color/white</item>
+        <item name="titleTextColor">@color/white</item>
+        <item name="android:textColorSecondary">@color/white</item>
+    </style>
+
+    <style name="ProgressBar.Medium" parent="Widget.AppCompat.ProgressBar">
+        <item name="android:maxWidth">38dp</item>
+        <item name="android:maxHeight">38dp</item>
+        <item name="android:minWidth">38dp</item>
+        <item name="android:minHeight">38dp</item>
+        <item name="android:indeterminateTint">@color/colorAccent</item>
+    </style>
+</resources>

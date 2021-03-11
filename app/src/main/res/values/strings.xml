@@ -1,3 +1,70 @@
 <resources>
     <string name="app_name">Generator</string>
+    <string name="account_login">Account Login</string>
+    <string name="sign_in">Sign In</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="error_unknown">Something went wrong</string>
+    <string name="name_pattern">%1$s %2$s</string>
+    <string name="network_error">Network error</string>
+    <string name="tap_to_retry">Tap to retry</string>
+    <string name="settings">Settings</string>
+    <string name="app_title">Generator</string>
+
+    <string name="settings_firmware">Firmware update</string>
+    <string name="settings_logout">Log out</string>
+    <string name="settings_title">Settings</string>
+    <string name="expired">Expired</string>
+
+    <string name="expires_at">Expires at %1$s</string>
+    <string name="programs_title">Programs</string>
+    <string name="cancel">Cancel</string>
+    <string name="discovery_title">Find devices</string>
+    <string name="location_permission_message">Location permission is needed to find nearby devices</string>
+    <string name="grant_access">Grant access</string>
+    <string name="settings_device">Device</string>
+    <string name="settings_device_not_connected">Not connected</string>
+    <string name="available_devices">Available devices</string>
+    <string name="settings_account">Account</string>
+    <string name="dialog_button_ok">OK</string>
+    <string name="error_dialog_title">Error</string>
+    <string name="connection_error_title">Connection error.</string>
+    <string name="connection_error_message">Unable to connect to the device %1$s</string>
+    <string name="device_unknown">Unknown</string>
+    <string name="action_connecting">Connecting…</string>
+    <string name="action_download">Download…</string>
+    <string name="percent_value">%1$d%%</string>
+    <string name="download_folder_error">Unable to download folder.</string>
+    <string name="action_import">Importing…</string>
+    <string name="action_reboot">Rebooting…</string>
+    <string name="error_file_transfer">Data transmission error</string>
+    <string name="import_success">Import finished successfully</string>
+    <string name="done">Done</string>
+    <string name="import_folder">Import folder</string>
+    <string name="flash_firmware">Flash firmware</string>
+    <string name="error_bluetooth_disabled">Bluetooth is disabled</string>
+    <string name="latest_version">Latest version:</string>
+    <string name="device_version">Device version</string>
+    <string name="update">Update</string>
+    <string name="it_is_already_latest_version">It is already latest version</string>
+    <string name="error_get_latest_version">Can\'t get the latest version from the server</string>
+    <string name="flash">Flash</string>
+    <string name="version_unavailable">Unavailable</string>
+    <string name="last_updated_at">Last updated at: %s</string>
+    <string name="force_flash">Force flash</string>
+    <string name="error_invalid_version">Version is invalid</string>
+    <string name="action_import_mcu_firmware">Import MCU firmware…</string>
+
+    <string name="import_was_canceled">The file transfer process was interrupted.\nStart transfer again?</string>
+    <string name="button_no">No</string>
+    <string name="button_yes">Yes</string>
+
+    <plurals name="expires_in_month">
+        <item quantity="one">Expires in a month</item>
+        <item quantity="other">Expires in %d months</item>
+    </plurals>
+    <plurals name="expires_in_days">
+        <item quantity="one">Expires in a day</item>
+        <item quantity="other">Expires in %d days</item>
+    </plurals>
 </resources>
