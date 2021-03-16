@@ -14,6 +14,8 @@ import com.inhealion.generator.databinding.ActivityMainBinding
 import com.inhealion.generator.extension.observe
 import com.inhealion.generator.extension.setFragmentResultListener
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
+import com.inhealion.generator.presentation.device.ImportAction
+import com.inhealion.generator.presentation.device.ImportFragmentArgs
 import com.inhealion.generator.presentation.login.LoginDialogFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
@@ -33,8 +35,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ImportService.enqueueWork(this, Intent(this, ImportService::class.java))
-
         with(viewModel) {
             action.observe(this@MainActivity) {
                 println("TTT > action $it")
@@ -45,6 +45,19 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             navigate()
+        }
+
+        if (savedInstanceState == null) {
+            when (intent.action) {
+                "com.inhealion.generator.intent.SHOW_IMPORT" -> {
+                    startActivity(
+                        Intent(this, ImportActivity::class.java).apply {
+                            putExtras(intent.extras!!)
+                        }
+                    )
+                }
+                else -> Unit
+            }
         }
     }
 

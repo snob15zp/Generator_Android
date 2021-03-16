@@ -8,6 +8,9 @@ import com.inhealion.generator.device.internal.DeviceConnectionFactoryImpl
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.account.SharedPrefAccountStore
+import com.inhealion.generator.service.ImportManager
+import com.inhealion.generator.service.ImportNotificationManager
+import com.inhealion.generator.service.ImportStateListener
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -20,4 +23,6 @@ val serviceModule = module {
     }
     factory<BleDeviceScanner> { BluetoothScannerImpl() }
     single<DeviceConnectionFactory> { DeviceConnectionFactoryImpl() }
+    factory { ImportManager(get(), get(), get(), get()) }
+    single { ImportNotificationManager(androidContext()) }
 }

@@ -11,12 +11,18 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ProgramsFragmentBinding
+import com.inhealion.generator.extension.observe
+import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.api.model.Program
 import com.inhealion.generator.presentation.activity.ImportActivity
+import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
 import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.device.ImportFragmentArgs
+import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.BaseFragment
+import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
+import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.inhealion.generator.presentation.programs.adapter.ProgramUiModel
 import com.inhealion.generator.presentation.programs.adapter.ProgramsAdapter
 import com.inhealion.generator.presentation.programs.viewmodel.ProgramsViewModel
@@ -38,24 +44,46 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.nameTextView.text = viewModel.folder.name
-        binding.infoTextView.text = stringProvider.getRelativeTimeSpanString(viewModel.folder.expiredAt.time)
-        binding.errorOverlay.retryButton.setOnClickListener { viewModel.load() }
-        binding.importButton.setOnClickListener {
-            startActivity(
-                Intent(requireContext(), ImportActivity::class.java).apply {
-                    putExtras(ImportFragmentArgs(ImportAction.ImportFolder(viewModel.folder.id)).toBundle())
-                }
+        with(binding) {
+            nameTextView.text = viewModel.folder.name
+            infoTextView.text = stringProvider.getRelativeTimeSpanString(viewModel.folder.expiredAt.time)
+            errorOverlay.retryButton.setOnClickListener { viewModel.load() }
+            importButton.setOnClickListener { viewModel.import() }
+
+            programsRecyclerView.adapter = adapter
+            (programsRecyclerView.layoutManager as GridLayoutManager).apply {
+                spanCount = 3
+            }
+        }
+
+        with(viewModel) {
+            state.observe(viewLifecycleOwner) { switchState(it) }
+            showDiscovery.observe(viewLifecycleOwner) {
+                DiscoveryDialogFragment.show(parentFragmentManager)
+                    .observe(CONNECT_REQUEST_KEY, viewLifecycleOwner, ::handleConnectionResult)
+            }
+            device.observe(viewLifecycleOwner) {
+                startActivity(
+                    Intent(requireContext(), ImportActivity::class.java).apply {
+                        putExtras(
+                            ImportFragmentArgs(ImportAction.ImportFolder(viewModel.folder.id, it.address)).toBundle()
+                        )
+                    }
+                )
+            }
+            load()
+        }
+    }
+
+    private fun handleConnectionResult(result: Bundle) {
+        if (result.getBoolean(RESULT_KEY)) {
+            viewModel.import()
+        } else {
+            MessageDialog.show(
+                parentFragmentManager,
+                MessageDialogData("", getString(R.string.device_not_connected_message))
             )
         }
-
-        binding.programsRecyclerView.adapter = adapter
-        (binding.programsRecyclerView.layoutManager as GridLayoutManager).apply {
-            spanCount = 3
-        }
-
-        viewModel.state.observe(viewLifecycleOwner) { switchState(it) }
-        viewModel.load()
     }
 
     override fun setupToolbar(toolbar: Toolbar) {
