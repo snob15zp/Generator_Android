@@ -1,57 +1,80 @@
 package com.inhealion.generator.service
 
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import androidx.core.app.JobIntentService
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.inhealion.generator.presentation.device.ImportAction
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.consumeAsFlow
+import org.koin.android.ext.android.get
 import org.koin.android.ext.android.inject
-import org.koin.core.parameter.parametersOf
+import kotlin.coroutines.CoroutineContext
 
-class ImportService : Service(), ImportStateListener {
+class ImportService : Service(), CoroutineScope {
 
-    private val localBroadcastManager: LocalBroadcastManager by lazy {
-        LocalBroadcastManager.getInstance(this)
-    }
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.IO + SupervisorJob()
 
-    private val importManager: ImportManager by inject { parametersOf(this) }
+    private val importManager: ImportManager by inject()
     private lateinit var notificationManager: ImportNotificationManager
+
+    private val binder = ImportServiceBinder()
 
     override fun onCreate() {
         super.onCreate()
         println("SSS > onCreate $this")
         notificationManager = ImportNotificationManager(this)
+        importManager.listener = binder
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        val importAction = intent.getParcelableExtra<ImportAction>(KEY_EXTRA_IMPORT_ACTION) ?: return START_NOT_STICKY
         println("SSS > onStartCommand $this")
+        launch {
+            delay(10000)
+            importManager.import(importAction)
+        }
         startForeground(
             notificationManager.id,
-            notificationManager.create()
+            notificationManager.create(importAction)
         )
         return START_STICKY
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        importManager.cancel()
+        importManager.listener = null
+        importManager.reset()
         println("SSS > onDestroy $this")
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder {
         println("SSS > onBind $intent")
-        return ImportServiceBinder()
+        return binder
     }
 
-    override fun onStateChanged(importState: ImportState) {
-        localBroadcastManager.sendBroadcast(Intent(IMPORT_BROADCAST_ACTION)
-            .apply { putExtra(KEY_IMPORT_STATE, importState) })
+    private fun stop() {
+        stopForeground(true)
+        stopSelf()
     }
 
-    inner class ImportServiceBinder : Binder()
+    inner class ImportServiceBinder : Binder(), ImportStateListener {
+        var isActive: Boolean = false
+            internal set
+
+        private val _importState = ConflatedBroadcastChannel(importManager.currentState)
+        val importState: Flow<ImportState> get() = _importState.openSubscription().consumeAsFlow()
+
+        override fun onStateChanged(importState: ImportState) {
+            isActive = importState.isActive
+            _importState.offer(importState)
+
+            if (!importState.isActive) stop()
+        }
+    }
 
     companion object {
         const val IMPORT_BROADCAST_ACTION = "IMPORT_BROADCAST_ACTION"
@@ -64,4 +87,5 @@ class ImportService : Service(), ImportStateListener {
 
         }
     }
+
 }

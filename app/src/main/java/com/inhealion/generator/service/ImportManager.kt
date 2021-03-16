@@ -22,25 +22,16 @@ import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 class ImportManager(
-    private val listener: ImportStateListener,
     private val api: GeneratorApiCoroutinesClient,
     private val connectionFactory: DeviceConnectionFactory,
     private val stringProvider: StringProvider,
     private val apiErrorStringProvider: ApiErrorStringProvider
 ) : CoroutineScope {
 
-    private var currentState: ImportState = ImportState.Idle
-    private val isInProcess: Boolean
-        get() = when (currentState) {
-            ImportState.Idle,
-            is ImportState.Error,
-            ImportState.Finished,
-            ImportState.Canceled -> false
-            ImportState.Downloading,
-            is ImportState.Importing,
-            ImportState.Rebooting,
-            ImportState.Connecting -> true
-        }
+    var listener: ImportStateListener? = null
+
+    var currentState: ImportState = ImportState.Idle
+        private set
 
     private var generator: Generator? = null
 
@@ -48,7 +39,7 @@ class ImportManager(
         get() = Dispatchers.IO + SupervisorJob()
 
     fun import(importAction: ImportAction) {
-        if (isInProcess) {
+        if (currentState != ImportState.Idle) {
             postState(currentState)
             Timber.d("Import is in process: $currentState")
             return
@@ -142,7 +133,7 @@ class ImportManager(
 
     private fun postState(state: ImportState) {
         currentState = state
-        listener.onStateChanged(state)
+        listener?.onStateChanged(state)
     }
 
     private fun importMcuFirmware(address: String, files: Map<String, ByteArray>): Boolean {
@@ -281,6 +272,8 @@ sealed class ImportState : Parcelable {
 
     @Parcelize
     object Finished : ImportState()
+
+    val isActive: Boolean get() = this is Connecting || this is Downloading || this is Rebooting || this is Importing
 }
 
 interface ImportStateListener {

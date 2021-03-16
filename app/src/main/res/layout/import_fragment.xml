@@ -53,8 +53,7 @@
         app:layout_constraintBottom_toTopOf="@+id/progress_circular"
         app:layout_constraintEnd_toEndOf="@+id/progress_circular"
         app:layout_constraintStart_toStartOf="@+id/progress_circular"
-        tools:text="Loading..."
-        tools:visibility="visible" />
+        tools:text="Loading..." />
 
     <ProgressBar
         android:id="@+id/progress_circular"

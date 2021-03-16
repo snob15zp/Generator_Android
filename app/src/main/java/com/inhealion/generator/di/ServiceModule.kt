@@ -23,7 +23,6 @@ val serviceModule = module {
     }
     factory<BleDeviceScanner> { BluetoothScannerImpl() }
     single<DeviceConnectionFactory> { DeviceConnectionFactoryImpl() }
-    single { (listener: ImportStateListener) -> ImportManager(listener, get(), get(), get(), get()) }
-
+    factory { ImportManager(get(), get(), get(), get()) }
     single { ImportNotificationManager(androidContext()) }
 }

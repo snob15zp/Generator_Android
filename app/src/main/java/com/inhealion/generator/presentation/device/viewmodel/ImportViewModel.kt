@@ -1,44 +1,61 @@
 package com.inhealion.generator.presentation.device.viewmodel
 
+import android.content.ComponentName
 import android.content.Context
-import android.util.Base64
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
-import com.inhealion.generator.R
+import androidx.lifecycle.asLiveData
 import com.inhealion.generator.data.repository.DeviceRepository
-import com.inhealion.generator.device.DeviceConnectionFactory
-import com.inhealion.generator.device.ErrorCodes
-import com.inhealion.generator.device.Generator
 import com.inhealion.generator.lifecyle.ActionLiveData
-import com.inhealion.generator.model.State
-import com.inhealion.generator.networking.ApiError
-import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
 import com.inhealion.generator.service.ImportService
-import com.inhealion.generator.utils.ApiErrorStringProvider
-import com.inhealion.generator.utils.StringProvider
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import timber.log.Timber
-import java.io.File
-import java.util.*
+import com.inhealion.generator.service.ImportState
+import kotlinx.coroutines.flow.*
 
 class ImportViewModel(
-    val importAction: ImportAction,
-    private val deviceRepository: DeviceRepository,
+    context: Context,
+    val importAction: ImportAction
 ) : BaseViewModel<Any>() {
 
-    val showDiscovery = ActionLiveData()
-    val currentAction = MutableLiveData<String>()
-    val currentProgress = MutableLiveData<Int>()
+    private var importService: ImportService.ImportServiceBinder? = null
 
-    var isCanceled: Boolean = false
+    private val _importState = MediatorLiveData<ImportState>()
+    val importState: LiveData<ImportState> = _importState
 
-    fun import() {}
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            println("SSS > onServiceConnected")
 
-    fun cancel() {
+            importService = service as ImportService.ImportServiceBinder
+            _importState.addSource(service.importState.asLiveData()) { _importState.value = it }
+            startImportIfNeeded(context, service)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            println("SSS > onServiceDisconnected")
+            dispose(context)
+        }
+    }
+
+    fun bind(context: Context){
+        context.bindService(Intent(context, ImportService::class.java), serviceConnection, Context.BIND_AUTO_CREATE)
+    }
+
+    fun dispose(context: Context) {
+        importService?.let { _importState.removeSource(it.importState.asLiveData()) }
+        importService = null
+        context.unbindService(serviceConnection)
+    }
+
+    private fun startImportIfNeeded(context: Context, service: ImportService.ImportServiceBinder) {
+        if (!service.isActive) {
+            context.startService(Intent(context, ImportService::class.java)
+                .apply { putExtra(ImportService.KEY_EXTRA_IMPORT_ACTION, importAction) })
+        }
     }
 }

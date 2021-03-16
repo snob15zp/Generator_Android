@@ -1,4 +1,3 @@
-
 package com.inhealion.generator.service
 
 import android.app.Notification
@@ -12,8 +11,11 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.inhealion.generator.R
 import com.inhealion.generator.presentation.activity.ImportActivity
+import com.inhealion.generator.presentation.activity.MainActivity
+import com.inhealion.generator.presentation.device.ImportAction
+import com.inhealion.generator.presentation.device.ImportFragmentArgs
 
-private const val CHANNEL_ID = "MediaSceneNotificationManager"
+private const val CHANNEL_ID = "ImportNotificationManager"
 private const val FOREGROUND_ID = 0x1
 
 class ImportNotificationManager(
@@ -27,13 +29,13 @@ class ImportNotificationManager(
         initChannel()
     }
 
-    fun create(): Notification =
+    fun create(importAction: ImportAction): Notification =
         NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_import_notification)
             .setContentTitle(context.getString(R.string.action_import))
             .setColor(context.getColor(R.color.colorAccent))
             .setProgress(100, 0, true)
-            .applyContentIntent()
+            .applyContentIntent(importAction)
             .build()
 
     private fun initChannel() {
@@ -53,10 +55,11 @@ class ImportNotificationManager(
     /**
      * Apply intent to open [ImportActivity]
      */
-    private fun NotificationCompat.Builder.applyContentIntent() = apply {
+    private fun NotificationCompat.Builder.applyContentIntent(importAction: ImportAction) = apply {
         val intent =
-            Intent(context, ImportActivity::class.java).apply {
-                action = Intent.ACTION_MAIN
+            Intent(context, MainActivity::class.java).apply {
+                action = "com.inhealion.generator.intent.SHOW_IMPORT"
+                putExtras(ImportFragmentArgs(importAction).toBundle())
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         val pendingIntent = PendingIntent.getActivity(
