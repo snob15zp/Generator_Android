@@ -33,8 +33,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        ImportService.enqueueWork(this, Intent(this, ImportService::class.java))
-
         with(viewModel) {
             action.observe(this@MainActivity) {
                 println("TTT > action $it")

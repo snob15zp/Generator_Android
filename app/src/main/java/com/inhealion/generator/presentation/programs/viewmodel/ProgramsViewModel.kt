@@ -1,6 +1,10 @@
 package com.inhealion.generator.presentation.programs.viewmodel
 
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.inhealion.generator.data.repository.DeviceRepository
+import com.inhealion.generator.device.model.BleDevice
+import com.inhealion.generator.lifecyle.ActionLiveData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.networking.api.model.Folder
@@ -14,8 +18,12 @@ import kotlinx.coroutines.launch
 class ProgramsViewModel(
     val folder: Folder,
     private val generatorApiCoroutinesClient: GeneratorApiCoroutinesClient,
-    private val apiErrorStringProvider: ApiErrorStringProvider
+    private val apiErrorStringProvider: ApiErrorStringProvider,
+    private val deviceRepository: DeviceRepository
 ) : BaseViewModel<List<Program>>() {
+
+    val device = MutableLiveData<BleDevice>()
+    val showDiscovery = ActionLiveData()
 
     fun load() {
         viewModelScope.launch {
@@ -25,5 +33,11 @@ class ProgramsViewModel(
                 .catch { postState(State.Failure(apiErrorStringProvider.getErrorMessage(it), it)) }
                 .collect { postState(State.Success(it)) }
         }
+    }
+
+    fun import() = viewModelScope.launch {
+        deviceRepository.get().valueOrNull()?.let {
+            device.value = it
+        } ?: showDiscovery.sendAction()
     }
 }

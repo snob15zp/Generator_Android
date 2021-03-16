@@ -2,6 +2,7 @@ package com.inhealion.generator.service
 
 import android.os.Parcelable
 import android.util.Base64
+import androidx.annotation.Keep
 import com.inhealion.generator.R
 import com.inhealion.generator.device.DeviceConnectionFactory
 import com.inhealion.generator.device.ErrorCodes
@@ -28,17 +29,30 @@ class ImportManager(
     private val apiErrorStringProvider: ApiErrorStringProvider
 ) : CoroutineScope {
 
-    var currentState: ImportState = ImportState.Idle
-        private set
+    private var currentState: ImportState = ImportState.Idle
+    private val isInProcess: Boolean
+        get() = when (currentState) {
+            ImportState.Idle,
+            is ImportState.Error,
+            ImportState.Finished,
+            ImportState.Canceled -> false
+            ImportState.Downloading,
+            is ImportState.Importing,
+            ImportState.Rebooting,
+            ImportState.Connecting -> true
+        }
 
-    private lateinit var generator: Generator
+    private var generator: Generator? = null
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + SupervisorJob()
 
-
     fun import(importAction: ImportAction) {
-        if (currentState !is ImportState.Idle) error("Illegal state $currentState")
+        if (isInProcess) {
+            postState(currentState)
+            Timber.d("Import is in process: $currentState")
+            return
+        }
 
         postState(ImportState.Downloading)
         val files = runBlocking { download(importAction) } ?: return
@@ -46,10 +60,16 @@ class ImportManager(
     }
 
     fun cancel() {
+        when (currentState) {
+            is ImportState.Idle,
+            is ImportState.Finished -> return
+            else -> Unit
+        }
+
         postState(ImportState.Canceled)
         coroutineContext.cancel()
         try {
-            generator.close()
+            generator?.close()
         } catch (e: Exception) {
             //Ignore
             Timber.w(e, "Close generator error")
@@ -63,31 +83,33 @@ class ImportManager(
             }
 
             postState(ImportState.Connecting)
-            generator = connectionFactory.connect(importAction.address)
+            connectionFactory.connect(importAction.address).let { localGenerator ->
+                generator = localGenerator
 
-            val totalSize = files.filter { !it.key.endsWith(".bf") }.values.sumOf { it.size }
-            var importedSize = 0
-            launch {
-                generator.fileImportProgress.onEach {
-                    postState(
-                        ImportState.Importing(
-                            if (totalSize == 0) 0 else (importedSize * 100) / totalSize,
-                            FileType.fromFileName(it.fileName)
+                val totalSize = files.filter { !it.key.endsWith(".bf") }.values.sumOf { it.size }
+                var importedSize = 0
+                launch {
+                    localGenerator.fileImportProgress.onEach {
+                        postState(
+                            ImportState.Importing(
+                                if (totalSize == 0) 0 else (importedSize * 100) / totalSize,
+                                FileType.fromFileName(it.fileName)
+                            )
                         )
-                    )
-                    importedSize += it.progress
+                        importedSize += it.progress
+                    }
                 }
-            }
 
-            if (importAction is ImportAction.ImportFolder) {
-                generator.eraseByExt("txt")
-                generator.eraseByExt("pls")
-            }
+                if (importAction is ImportAction.ImportFolder) {
+                    localGenerator.eraseByExt("txt")
+                    localGenerator.eraseByExt("pls")
+                }
 
-            FileType.values().filter { it != FileType.MCU }.forEach {
-                if (!importByExt(generator, files, it.extension)) {
-                    postState(ImportState.Error(stringProvider.getString(R.string.error_file_transfer)))
-                    return
+                FileType.values().filter { it != FileType.MCU }.forEach {
+                    if (!importByExt(localGenerator, files, it.extension)) {
+                        postState(ImportState.Error(stringProvider.getString(R.string.error_file_transfer)))
+                        return
+                    }
                 }
             }
             println("RRR > done")
@@ -98,7 +120,7 @@ class ImportManager(
                 ImportState.Error(stringProvider.getString(R.string.connection_error_message, importAction.address), e)
             )
         } finally {
-            generator.close()
+            generator?.close()
         }
 
     }
@@ -125,17 +147,17 @@ class ImportManager(
 
     private fun importMcuFirmware(address: String, files: Map<String, ByteArray>): Boolean {
         postState(ImportState.Connecting)
-        generator = connectionFactory.connect(address)
-
-        postState(ImportState.Importing(0, FileType.MCU))
-        val data = files.entries.firstOrNull { it.key.endsWith(".bf") }?.value ?: return true
-        if (!importMcuFirmwareData(generator, data)) {
-            postState(ImportState.Error(stringProvider.getString(R.string.error_file_transfer)))
-            return false
+        connectionFactory.connect(address).let { localGenerator ->
+            generator = localGenerator
+            postState(ImportState.Importing(0, FileType.MCU))
+            val data = files.entries.firstOrNull { it.key.endsWith(".bf") }?.value ?: return true
+            if (!importMcuFirmwareData(localGenerator, data)) {
+                postState(ImportState.Error(stringProvider.getString(R.string.error_file_transfer)))
+                return false
+            }
+            localGenerator.reboot()
+            localGenerator.close()
         }
-        generator.reboot()
-        generator.close()
-
         postState(ImportState.Rebooting)
         runBlocking { awaitDeviceConnection(address) }
         return true
@@ -207,6 +229,11 @@ class ImportManager(
     private fun getFiles(path: String) =
         File(path).listFiles()?.map { it.name to it.readBytes() }?.toMap() ?: emptyMap()
 
+    fun reset() {
+        cancel()
+        currentState = ImportState.Idle
+    }
+
 
     companion object {
         private val FILES_IMPORT_ORDER = listOf("rbf", "srec", "bin", "txt", "pls")
@@ -229,6 +256,7 @@ enum class FileType(val extension: String) {
     }
 }
 
+@Keep
 sealed class ImportState : Parcelable {
     @Parcelize
     object Idle : ImportState()

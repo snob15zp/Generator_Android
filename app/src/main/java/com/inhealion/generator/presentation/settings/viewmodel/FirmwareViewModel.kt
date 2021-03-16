@@ -7,6 +7,7 @@ import com.inhealion.generator.data.model.VersionInfo
 import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.data.repository.VersionInfoRepository
 import com.inhealion.generator.device.DeviceConnectionFactory
+import com.inhealion.generator.device.model.BleDevice
 import com.inhealion.generator.lifecyle.ActionLiveData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
@@ -26,15 +27,17 @@ class FirmwareViewModel(
 
     val showDiscovery = ActionLiveData()
     var latestVersion: String? = null
+    var device: BleDevice? = null
+        private set
 
     fun load(forceReload: Boolean = false) = viewModelScope.launch {
         postState(State.Idle)
 
-        val device = deviceRepository.get().valueOrNull()
-        if (device == null) {
-            showDiscovery.sendAction()
-            return@launch
-        }
+        deviceRepository.get().valueOrNull()?.let { device = it }
+            ?: run {
+                showDiscovery.sendAction()
+                return@launch
+            }
 
         if (BluetoothAdapter.getDefaultAdapter()?.isEnabled != true) {
             postState(State.Failure(stringProvider.getString(R.string.error_bluetooth_disabled)))
@@ -54,9 +57,9 @@ class FirmwareViewModel(
             .catch { postState(State.Failure(stringProvider.getString(R.string.error_get_latest_version))) }
             .map { firmwareVersion ->
                 val deviceVersion: String? = try {
-                    connectionFactory.connect(device.address).use { it.version }
+                    connectionFactory.connect(device!!.address).use { it.version }
                 } catch (e: Exception) {
-                    val errorMessage = stringProvider.getString(R.string.connection_error_message, device.name ?: "")
+                    val errorMessage = stringProvider.getString(R.string.connection_error_message, device!!.name ?: "")
                     postState(State.Failure(errorMessage))
                     null
                 }
