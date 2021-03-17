@@ -10,12 +10,12 @@ import androidx.navigation.fragment.navArgs
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportFragmentBinding
 import com.inhealion.generator.model.MessageDialogData
-import com.inhealion.generator.model.State
 import com.inhealion.generator.presentation.device.viewmodel.ImportViewModel
 import com.inhealion.generator.presentation.dialogs.ERROR_DIALOG_REQUEST_KEY
 import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.service.FileType
+import com.inhealion.generator.service.ImportService
 import com.inhealion.generator.service.ImportState
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -31,7 +31,12 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         }
     }
 
-    private val viewModel: ImportViewModel by viewModel { parametersOf(navArgs<ImportFragmentArgs>().value.importAction) }
+    private val viewModel: ImportViewModel by viewModel {
+        parametersOf(
+            navArgs<ImportFragmentArgs>().value.importAction,
+            navArgs<ImportFragmentArgs>().value.importState
+        )
+    }
 
 //    private val dialog: AlertDialog by lazy {
 //        MaterialAlertDialogBuilder(requireContext())
@@ -51,7 +56,10 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         )
 
         with(binding) {
-            cancelButton.setOnClickListener { back() }
+            cancelButton.setOnClickListener {
+                ImportService.stop(requireContext())
+                back()
+            }
             closeImage.setOnClickListener { back() }
             titleTextView.text = when (viewModel.importAction) {
                 is ImportAction.ImportFolder -> getString(R.string.import_folder)

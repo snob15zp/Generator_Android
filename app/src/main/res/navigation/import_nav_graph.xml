@@ -12,6 +12,11 @@
             android:name="importAction"
             app:argType="com.inhealion.generator.presentation.device.ImportAction"
             app:nullable="false" />
+        <argument
+            android:name="importState"
+            android:defaultValue="@null"
+            app:argType="com.inhealion.generator.service.ImportState"
+            app:nullable="true" />
         <action
             android:id="@+id/action_importFragment_to_discoveryFragment"
             app:destination="@id/discoveryFragment" />

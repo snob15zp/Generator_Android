@@ -52,6 +52,11 @@ interface Generator : Closeable {
     fun reboot(): Boolean
 
     /**
+     * Transmit session is done
+     */
+    fun transmitDone()
+
+    /**
      *  Выполняется по записи части файла, для обновления отображения процесса
      *  Части tuple - Название файла - текущий размер, всего размер
      **/

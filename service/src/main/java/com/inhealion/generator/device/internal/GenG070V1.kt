@@ -157,6 +157,15 @@ class GenG070V1(address: String) : Generator {
         }
     }
 
+    override fun transmitDone() {
+        try {
+            modbusMasterRTU.setResponseTimeout(1500)
+            modbusMasterRTU.writeSingleRegister(SERVER_ADDRESS, 0x20, 1.shl(8))
+        } catch (e: Exception) {
+            Timber.e(e, "Unable to reboot")
+        }
+    }
+
     override fun close() {
         _fileImportProgress.close()
         modbusMasterRTU.disconnect()

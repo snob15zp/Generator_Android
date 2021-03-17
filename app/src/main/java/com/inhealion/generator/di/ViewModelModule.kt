@@ -10,6 +10,7 @@ import com.inhealion.generator.presentation.programs.viewmodel.FolderViewModel
 import com.inhealion.generator.presentation.programs.viewmodel.ProgramsViewModel
 import com.inhealion.generator.presentation.settings.viewmodel.FirmwareViewModel
 import com.inhealion.generator.presentation.settings.viewmodel.SettingsViewModel
+import com.inhealion.generator.service.ImportState
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -19,7 +20,13 @@ val viewModelModule = module {
     viewModel { LoginViewModel(get(), get()) }
     viewModel { FolderViewModel(get(), get(), get()) }
     viewModel { (folder: Folder) -> ProgramsViewModel(folder, get(), get(), get()) }
-    viewModel { (importAction: ImportAction) -> ImportViewModel(androidContext(), importAction) }
+    viewModel { (importAction: ImportAction, resultImportState: ImportState?) ->
+        ImportViewModel(
+            androidContext(),
+            importAction,
+            resultImportState
+        )
+    }
     viewModel { SettingsViewModel(get(), get()) }
     viewModel { MainViewModel(get(), get(), get()) }
     viewModel { FirmwareViewModel(get(), get(), get(), get(), get()) }
