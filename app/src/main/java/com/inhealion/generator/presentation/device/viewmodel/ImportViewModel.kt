@@ -19,7 +19,8 @@ import kotlinx.coroutines.flow.*
 
 class ImportViewModel(
     context: Context,
-    val importAction: ImportAction
+    val importAction: ImportAction,
+    private val resultImportState: ImportState?,
 ) : BaseViewModel<Any>() {
 
     private var importService: ImportService.ImportServiceBinder? = null
@@ -42,20 +43,25 @@ class ImportViewModel(
         }
     }
 
-    fun bind(context: Context){
-        context.bindService(Intent(context, ImportService::class.java), serviceConnection, Context.BIND_AUTO_CREATE)
+    fun bind(context: Context) {
+        if (resultImportState != null) {
+            _importState.value = resultImportState
+            return
+        }
+        context.bindService(ImportService.intent(context), serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
     fun dispose(context: Context) {
-        importService?.let { _importState.removeSource(it.importState.asLiveData()) }
+        importService?.let {
+            _importState.removeSource(it.importState.asLiveData())
+            context.unbindService(serviceConnection)
+        }
         importService = null
-        context.unbindService(serviceConnection)
     }
 
     private fun startImportIfNeeded(context: Context, service: ImportService.ImportServiceBinder) {
         if (!service.isActive) {
-            context.startService(Intent(context, ImportService::class.java)
-                .apply { putExtra(ImportService.KEY_EXTRA_IMPORT_ACTION, importAction) })
+            ImportService.start(context, importAction)
         }
     }
 }

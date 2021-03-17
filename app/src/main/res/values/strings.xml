@@ -36,6 +36,7 @@
     <string name="percent_value">%1$d%%</string>
     <string name="download_folder_error">Unable to download folder.</string>
     <string name="action_import">Importing…</string>
+    <string name="action_idle">Initializing…</string>
     <string name="action_reboot">Rebooting…</string>
     <string name="error_file_transfer">Data transmission error</string>
     <string name="import_success">Import finished successfully</string>

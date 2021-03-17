@@ -1,10 +1,14 @@
 package com.inhealion.generator.service
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import com.inhealion.generator.R
+import com.inhealion.generator.presentation.activity.MainActivity
 import com.inhealion.generator.presentation.device.ImportAction
+import com.inhealion.generator.presentation.device.ImportFragmentArgs
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +24,7 @@ class ImportService : Service(), CoroutineScope {
 
     private val importManager: ImportManager by inject()
     private lateinit var notificationManager: ImportNotificationManager
+    private var importAction: ImportAction? = null
 
     private val binder = ImportServiceBinder()
 
@@ -32,10 +37,12 @@ class ImportService : Service(), CoroutineScope {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         val importAction = intent.getParcelableExtra<ImportAction>(KEY_EXTRA_IMPORT_ACTION) ?: return START_NOT_STICKY
+        this.importAction = importAction
         println("SSS > onStartCommand $this")
         launch {
+            //importManager.import(importAction)
             delay(10000)
-            importManager.import(importAction)
+            stop(ImportState.Finished)
         }
         startForeground(
             notificationManager.id,
@@ -56,8 +63,8 @@ class ImportService : Service(), CoroutineScope {
         return binder
     }
 
-    private fun stop() {
-        stopForeground(true)
+    private fun stop(importState: ImportState) {
+        stopForeground(false)
         stopSelf()
     }
 
@@ -71,21 +78,25 @@ class ImportService : Service(), CoroutineScope {
         override fun onStateChanged(importState: ImportState) {
             isActive = importState.isActive
             _importState.offer(importState)
+            notificationManager.bind(importState)
+            if (!importState.isActive) {
 
-            if (!importState.isActive) stop()
+                stop(importState)
+            }
         }
     }
 
     companion object {
-        const val IMPORT_BROADCAST_ACTION = "IMPORT_BROADCAST_ACTION"
-        const val KEY_IMPORT_STATE = "KEY_IMPORT_STATE"
-        const val KEY_EXTRA_IMPORT_ACTION = "KEY_EXTRA_IMPORT_ACTION"
-        private const val KEY_EXTRA_FORCE_START = "KEY_EXTRA_FORCE_START"
-        private const val JOB_ID = 1000
+        private const val KEY_EXTRA_IMPORT_ACTION = "KEY_EXTRA_IMPORT_ACTION"
 
-        fun start() {
+        fun stop(context: Context) = context.stopService(intent(context))
 
-        }
+        fun start(context: Context, importAction: ImportAction) = context.startService(intent(context, importAction))
+
+        fun intent(context: Context, importAction: ImportAction? = null) =
+            Intent(context, ImportService::class.java).apply {
+                importAction?.let { putExtra(KEY_EXTRA_IMPORT_ACTION, it) }
+            }
     }
 
 }

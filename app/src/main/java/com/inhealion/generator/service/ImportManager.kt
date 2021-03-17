@@ -13,6 +13,7 @@ import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.utils.ApiErrorStringProvider
 import com.inhealion.generator.utils.StringProvider
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.parcelize.Parcelize
@@ -50,12 +51,8 @@ class ImportManager(
         importToDevice(importAction, files)
     }
 
-    fun cancel() {
-        when (currentState) {
-            is ImportState.Idle,
-            is ImportState.Finished -> return
-            else -> Unit
-        }
+    private fun close() {
+        if (!currentState.isActive) return
 
         postState(ImportState.Canceled)
         coroutineContext.cancel()
@@ -80,7 +77,7 @@ class ImportManager(
                 val totalSize = files.filter { !it.key.endsWith(".bf") }.values.sumOf { it.size }
                 var importedSize = 0
                 launch {
-                    localGenerator.fileImportProgress.onEach {
+                    localGenerator.fileImportProgress.collect {
                         postState(
                             ImportState.Importing(
                                 if (totalSize == 0) 0 else (importedSize * 100) / totalSize,
@@ -111,9 +108,9 @@ class ImportManager(
                 ImportState.Error(stringProvider.getString(R.string.connection_error_message, importAction.address), e)
             )
         } finally {
+            generator?.transmitDone()
             generator?.close()
         }
-
     }
 
     private suspend fun download(importAction: ImportAction) =
@@ -221,15 +218,13 @@ class ImportManager(
         File(path).listFiles()?.map { it.name to it.readBytes() }?.toMap() ?: emptyMap()
 
     fun reset() {
-        cancel()
+        close()
         currentState = ImportState.Idle
     }
-
 
     companion object {
         private val FILES_IMPORT_ORDER = listOf("rbf", "srec", "bin", "txt", "pls")
     }
-
 }
 
 enum class FileType(val extension: String) {
