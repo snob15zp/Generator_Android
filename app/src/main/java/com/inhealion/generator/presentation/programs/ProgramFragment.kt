@@ -11,6 +11,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ProgramsFragmentBinding
+import com.inhealion.generator.device.model.BleDevice
 import com.inhealion.generator.extension.observe
 import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
@@ -48,7 +49,7 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
             nameTextView.text = viewModel.folder.name
             infoTextView.text = stringProvider.getRelativeTimeSpanString(viewModel.folder.expiredAt.time)
             errorOverlay.retryButton.setOnClickListener { viewModel.load() }
-            importButton.setOnClickListener { viewModel.import() }
+            importButton.setOnClickListener { viewModel.import(requireContext()) }
 
             programsRecyclerView.adapter = adapter
             (programsRecyclerView.layoutManager as GridLayoutManager).apply {
@@ -62,22 +63,25 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
                 DiscoveryDialogFragment.show(parentFragmentManager)
                     .observe(CONNECT_REQUEST_KEY, viewLifecycleOwner, ::handleConnectionResult)
             }
-            device.observe(viewLifecycleOwner) {
-                startActivity(
-                    Intent(requireContext(), ImportActivity::class.java).apply {
-                        putExtras(
-                            ImportFragmentArgs(ImportAction.ImportFolder(viewModel.folder.id, it.address)).toBundle()
-                        )
-                    }
-                )
+            device.observe(viewLifecycleOwner) { showImportActivity(viewModel.folder.id, it) }
+            isImportInProgress.observe(viewLifecycleOwner) {
+                binding.importButton.isVisible = !it
             }
             load()
         }
     }
 
+    private fun showImportActivity(folderId: String, device: BleDevice) {
+        startActivity(
+            Intent(requireContext(), ImportActivity::class.java).apply {
+                putExtras(ImportFragmentArgs(ImportAction.ImportFolder(folderId, device)).toBundle())
+            }
+        )
+    }
+
     private fun handleConnectionResult(result: Bundle) {
         if (result.getBoolean(RESULT_KEY)) {
-            viewModel.import()
+            viewModel.import(requireContext())
         } else {
             MessageDialog.show(
                 parentFragmentManager,

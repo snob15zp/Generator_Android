@@ -15,15 +15,7 @@ class Lfov(
 ) : Iterator<IntArray> {
 
     private var position = 0
-    private val truncatedFileName = File(fileName).run {
-        if (nameWithoutExtension.length > maxFileNameSize) {
-            val ext = extension.substring(1, 3)
-            val name = nameWithoutExtension.substring(0, maxFileNameSize)
-            "$name.$ext"
-        } else {
-            fileName
-        }
-    }
+    private val truncatedFileName = truncatedFileName(fileName, maxFileNameSize)
 
     override fun hasNext() = (position < content.size).also {
         println("TTT > hasNext: $it")
@@ -70,5 +62,16 @@ class Lfov(
 
     companion object {
         private const val IS_ENCRYPTED = false
+
+        fun truncatedFileName(fileName: String, maxFileNameSize: Int, withoutExtension: Boolean = false) =
+            File(fileName).run {
+                if (nameWithoutExtension.length > maxFileNameSize) {
+                    val ext = extension.substring(1, 3)
+                    val name = nameWithoutExtension.substring(0, maxFileNameSize)
+                    if (withoutExtension) name else "$name.$ext"
+                } else {
+                    if (withoutExtension) nameWithoutExtension else fileName
+                }
+            }
     }
 }

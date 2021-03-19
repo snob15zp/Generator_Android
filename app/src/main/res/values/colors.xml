@@ -16,6 +16,7 @@
     <color name="textColorDark">#ad000000</color>
     <color name="overlayBackground">@color/black_alpha_32</color>
     <color name="color_divider">#3e000000</color>
-
+    <color name="notice_info_bg">#E5F5FD</color>
+    <color name="notice_error_bg">#F5E6dD</color>
 
 </resources>

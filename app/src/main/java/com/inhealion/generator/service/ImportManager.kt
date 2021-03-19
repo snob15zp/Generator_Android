@@ -7,6 +7,9 @@ import com.inhealion.generator.R
 import com.inhealion.generator.device.DeviceConnectionFactory
 import com.inhealion.generator.device.ErrorCodes
 import com.inhealion.generator.device.Generator
+import com.inhealion.generator.device.internal.GenG070V1.Companion.MAX_FILENAME_SIZE
+import com.inhealion.generator.device.internal.GenG070V1.Companion.MAX_LINE_NAME_SIZE
+import com.inhealion.generator.device.internal.Lfov
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.presentation.device.ImportAction
@@ -67,11 +70,11 @@ class ImportManager(
     private fun importToDevice(importAction: ImportAction, files: Map<String, ByteArray>) {
         try {
             if (importAction is ImportAction.UpdateFirmware) {
-                if (!importMcuFirmware(importAction.address, files)) return
+                if (!importMcuFirmware(importAction.device.address, files)) return
             }
 
             postState(ImportState.Connecting)
-            connectionFactory.connect(importAction.address).let { localGenerator ->
+            connectionFactory.connect(importAction.device.address).let { localGenerator ->
                 generator = localGenerator
 
                 val totalSize = files.filter { !it.key.endsWith(".bf") }.values.sumOf { it.size }
@@ -105,7 +108,12 @@ class ImportManager(
         } catch (e: Exception) {
             Timber.e(e, "Unable to import data")
             postState(
-                ImportState.Error(stringProvider.getString(R.string.connection_error_message, importAction.address), e)
+                ImportState.Error(
+                    stringProvider.getString(
+                        R.string.connection_error_message,
+                        importAction.device.address
+                    ), e
+                )
             )
         } finally {
             generator?.transmitDone()
@@ -211,15 +219,26 @@ class ImportManager(
 
     private suspend fun downloadFolder(folderId: String): Map<String, ByteArray> {
         val path = api.downloadFolder(folderId).firstOrNull() ?: return emptyMap()
-        return getFiles(path)
+        val files = getFiles(path)
+        val playList = files.keys.joinToString {
+            Lfov.truncatedFileName(it, MAX_FILENAME_SIZE, true).padEnd(MAX_LINE_NAME_SIZE)
+        }
+        return files.toMutableMap().apply {
+            put("freq.pls", playList.toByteArray())
+        }
     }
 
     private fun getFiles(path: String) =
-        File(path).listFiles()?.map { it.name to it.readBytes() }?.toMap() ?: emptyMap()
+        File(path).listFiles()
+            //  Exclude pls file. It will creating programmatically.
+            ?.filter { !it.name.endsWith("pls") }
+            ?.map { it.name to it.readBytes() }
+            ?.toMap() ?: emptyMap()
 
     fun reset() {
         close()
         currentState = ImportState.Idle
+        listener?.onStateChanged(currentState)
     }
 
     companion object {

@@ -162,7 +162,7 @@ class GenG070V1(address: String) : Generator {
             modbusMasterRTU.setResponseTimeout(1500)
             modbusMasterRTU.writeSingleRegister(SERVER_ADDRESS, 0x20, 1.shl(8))
         } catch (e: Exception) {
-            Timber.e(e, "Unable to reboot")
+            Timber.w(e, "Send TransmitDone is failed")
         }
     }
 
@@ -202,8 +202,12 @@ class GenG070V1(address: String) : Generator {
         /**
          * Максимальный размер названия файла
          **/
-        const val MAX_FILENAME_SIZE = 12
+        const val MAX_FILENAME_SIZE = 26
 
+        /**
+         * Максимальный размер названия файла в плэйлисте
+         **/
+        const val MAX_LINE_NAME_SIZE = 32
 
         /**
          * Адрес по-умолчанию

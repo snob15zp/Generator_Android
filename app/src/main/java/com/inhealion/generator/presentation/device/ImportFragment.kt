@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentResultListener
 import androidx.navigation.fragment.navArgs
 import com.inhealion.generator.R
@@ -31,20 +32,14 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         }
     }
 
+    private var dialog: DialogFragment? = null
+
     private val viewModel: ImportViewModel by viewModel {
         parametersOf(
             navArgs<ImportFragmentArgs>().value.importAction,
             navArgs<ImportFragmentArgs>().value.importState
         )
     }
-
-//    private val dialog: AlertDialog by lazy {
-//        MaterialAlertDialogBuilder(requireContext())
-//            .setMessage(R.string.import_was_canceled)
-//            .setNegativeButton(R.string.button_no) { _, _ -> back() }
-//            .setPositiveButton(R.string.button_yes) { _, _ -> viewModel.import() }
-//            .create()
-//    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -57,7 +52,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
         with(binding) {
             cancelButton.setOnClickListener {
-                ImportService.stop(requireContext())
+                viewModel.cancel(requireContext())
                 back()
             }
             closeImage.setOnClickListener { back() }
@@ -70,6 +65,11 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         with(viewModel) {
             importState.observe(viewLifecycleOwner, ::handleImportStateChanged)
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        dialog?.dismiss()
     }
 
     private fun handleImportStateChanged(importState: ImportState) = with(binding) {
@@ -98,7 +98,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
             is ImportState.Error -> {
                 progressCircular.isVisible = false
                 progressTextView.isVisible = false
-                MessageDialog.show(
+                dialog = MessageDialog.show(
                     parentFragmentManager,
                     MessageDialogData(getString(R.string.error_dialog_title), importState.message)
                 )
@@ -106,7 +106,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
             ImportState.Finished -> {
                 actionTextView.text = getString(R.string.done)
                 progressTextView.isVisible = false
-                MessageDialog.show(
+                dialog = MessageDialog.show(
                     parentFragmentManager,
                     MessageDialogData(getString(R.string.done), getString(R.string.import_success))
                 )
@@ -114,16 +114,6 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
             ImportState.Idle -> Unit
             ImportState.Canceled -> Unit
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.bind(requireContext())
-    }
-
-    override fun onPause() {
-        super.onPause()
-        viewModel.dispose(requireContext())
     }
 
     private fun handleProgressChanged(progress: Int?) {

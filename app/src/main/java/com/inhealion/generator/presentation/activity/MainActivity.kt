@@ -3,26 +3,18 @@ package com.inhealion.generator.presentation.activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
-import androidx.navigation.NavOptions
-import androidx.navigation.createGraph
-import androidx.navigation.findNavController
+import androidx.core.view.isVisible
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.fragment.findNavController
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ActivityMainBinding
 import com.inhealion.generator.extension.observe
-import com.inhealion.generator.extension.setFragmentResultListener
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
-import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.device.ImportFragmentArgs
 import com.inhealion.generator.presentation.login.LoginDialogFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
-import com.inhealion.generator.presentation.main.MainFragmentDirections
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.inhealion.generator.presentation.main.viewmodel.MainViewModel
-import com.inhealion.generator.service.ImportService
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : AppCompatActivity() {
@@ -44,21 +36,33 @@ class MainActivity : AppCompatActivity() {
                     MainViewModel.Action.ShowLogin -> launchLoginDialog()
                 }
             }
+            importState.observe(this@MainActivity) {
+                with(binding.noticeView) {
+                    when (it) {
+                        MainViewModel.UiImportState.InProgress -> showInfo(R.string.notice_import_is_in_progress)
+                        is MainViewModel.UiImportState.Failed -> showError(it.message)
+                        MainViewModel.UiImportState.Success -> showSuccess(R.string.notice_import_success)
+                        else -> isVisible = false
+                    }
+                }
+            }
             navigate()
         }
 
         if (savedInstanceState == null) {
             when (intent.action) {
-                "com.inhealion.generator.intent.SHOW_IMPORT" -> {
-                    startActivity(
-                        Intent(this, ImportActivity::class.java).apply {
-                            putExtras(intent.extras!!)
-                        }
-                    )
-                }
+                "com.inhealion.generator.intent.SHOW_IMPORT" -> showImportActivity()
                 else -> Unit
             }
         }
+    }
+
+    private fun showImportActivity() {
+        startActivity(
+            Intent(this, ImportActivity::class.java).apply {
+                putExtras(intent.extras!!)
+            }
+        )
     }
 
     private fun handleConnectionResult(result: Bundle) {

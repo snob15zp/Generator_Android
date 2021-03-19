@@ -36,9 +36,9 @@ open class FlowEventDelegate<T> : EventDelegate<T> {
 
     private fun createChannel(initialValue: T? = null): ConflatedBroadcastChannel<T> {
         return if (initialValue == null) {
-            ConflatedBroadcastChannel<T>()
+            ConflatedBroadcastChannel()
         } else {
-            ConflatedBroadcastChannel<T>(initialValue)
+            ConflatedBroadcastChannel(initialValue)
         }
     }
 }

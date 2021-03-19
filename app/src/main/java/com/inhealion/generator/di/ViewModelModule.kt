@@ -19,15 +19,15 @@ val viewModelModule = module {
     viewModel { DiscoveryViewModel(get(), get(), get()) }
     viewModel { LoginViewModel(get(), get()) }
     viewModel { FolderViewModel(get(), get(), get()) }
-    viewModel { (folder: Folder) -> ProgramsViewModel(folder, get(), get(), get()) }
+    viewModel { (folder: Folder) -> ProgramsViewModel(folder, get(), get(), get(), get()) }
     viewModel { (importAction: ImportAction, resultImportState: ImportState?) ->
         ImportViewModel(
-            androidContext(),
             importAction,
-            resultImportState
+            resultImportState,
+            get()
         )
     }
     viewModel { SettingsViewModel(get(), get()) }
-    viewModel { MainViewModel(get(), get(), get()) }
+    viewModel { MainViewModel(get(), get(), get(), get()) }
     viewModel { FirmwareViewModel(get(), get(), get(), get(), get()) }
 }

@@ -58,7 +58,7 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
         }
         startActivity(
             Intent(requireContext(), ImportActivity::class.java).apply {
-                putExtras(ImportFragmentArgs(ImportAction.UpdateFirmware(version, viewModel.device!!.address)).toBundle())
+                putExtras(ImportFragmentArgs(ImportAction.UpdateFirmware(version, viewModel.device!!)).toBundle())
             }
         )
     }
