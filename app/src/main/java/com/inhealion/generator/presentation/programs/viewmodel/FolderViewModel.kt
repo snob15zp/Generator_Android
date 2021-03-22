@@ -1,9 +1,6 @@
 package com.inhealion.generator.presentation.programs.viewmodel
 
-import android.util.LruCache
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewModelScope
-import com.inhealion.generator.R
 import com.inhealion.generator.data.repository.UserRepository
 import com.inhealion.generator.model.*
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
@@ -30,7 +27,7 @@ class FolderViewModel(
             postState(State.InProgress())
 
             val user = userRepository.get().valueOrNull() ?: run {
-                postState(State.Failure(stringResource(R.string.error_unknown)))
+                //postState(State.Failure(stringResource(R.string.error_unknown)))
                 return@launch
             }
             fetch(KEY_USER_PROFILE) { generatorApiCoroutinesClient.fetchUserProfile(user.id!!) }

@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.Intent.*
 import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -91,7 +92,7 @@ class ImportNotificationManager(
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 context.getString(R.string.action_import),
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 setSound(null, null)
                 setShowBadge(true)
@@ -105,16 +106,15 @@ class ImportNotificationManager(
      * Apply intent to open [ImportActivity]
      */
     private fun NotificationCompat.Builder.applyContentIntent(importAction: ImportAction) = apply {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            action = "com.inhealion.generator.intent.SHOW_IMPORT"
+        val intent = Intent(context, ImportActivity::class.java).apply {
             putExtras(ImportFragmentArgs(importAction).toBundle())
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(FLAG_ACTIVITY_NEW_TASK.or(FLAG_ACTIVITY_REORDER_TO_FRONT))
         }
-        val pendingIntent = PendingIntent.getActivity(
+        val pendingIntent = PendingIntent.getActivities(
             context,
             0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            arrayOf(Intent(context, MainActivity::class.java), intent),
+            PendingIntent.FLAG_ONE_SHOT
         )
         setContentIntent(pendingIntent)
     }

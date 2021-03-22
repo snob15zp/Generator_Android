@@ -1,29 +1,35 @@
 package com.inhealion.generator.presentation.activity
 
-import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
+import androidx.lifecycle.LiveData
 import androidx.navigation.fragment.NavHostFragment
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ActivityMainBinding
 import com.inhealion.generator.extension.observe
+import com.inhealion.generator.model.UiImportState
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
-import com.inhealion.generator.presentation.device.ImportFragmentArgs
 import com.inhealion.generator.presentation.login.LoginDialogFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.inhealion.generator.presentation.main.viewmodel.MainViewModel
+import com.inhealion.generator.presentation.view.NoticeView
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private val viewModel: MainViewModel by viewModel()
 
+    override val noticeView: NoticeView
+        get() = binding.noticeView
+
+    override val importState: LiveData<UiImportState>
+        get() = viewModel.importState
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -36,33 +42,8 @@ class MainActivity : AppCompatActivity() {
                     MainViewModel.Action.ShowLogin -> launchLoginDialog()
                 }
             }
-            importState.observe(this@MainActivity) {
-                with(binding.noticeView) {
-                    when (it) {
-                        MainViewModel.UiImportState.InProgress -> showInfo(R.string.notice_import_is_in_progress)
-                        is MainViewModel.UiImportState.Failed -> showError(it.message)
-                        MainViewModel.UiImportState.Success -> showSuccess(R.string.notice_import_success)
-                        else -> isVisible = false
-                    }
-                }
-            }
             navigate()
         }
-
-        if (savedInstanceState == null) {
-            when (intent.action) {
-                "com.inhealion.generator.intent.SHOW_IMPORT" -> showImportActivity()
-                else -> Unit
-            }
-        }
-    }
-
-    private fun showImportActivity() {
-        startActivity(
-            Intent(this, ImportActivity::class.java).apply {
-                putExtras(intent.extras!!)
-            }
-        )
     }
 
     private fun handleConnectionResult(result: Bundle) {

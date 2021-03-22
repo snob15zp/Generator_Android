@@ -6,6 +6,7 @@ import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.device.viewmodel.ImportViewModel
 import com.inhealion.generator.presentation.login.LoginViewModel
 import com.inhealion.generator.presentation.main.viewmodel.MainViewModel
+import com.inhealion.generator.presentation.main.viewmodel.SettingsActivityViewModel
 import com.inhealion.generator.presentation.programs.viewmodel.FolderViewModel
 import com.inhealion.generator.presentation.programs.viewmodel.ProgramsViewModel
 import com.inhealion.generator.presentation.settings.viewmodel.FirmwareViewModel
@@ -29,5 +30,6 @@ val viewModelModule = module {
     }
     viewModel { SettingsViewModel(get(), get()) }
     viewModel { MainViewModel(get(), get(), get(), get()) }
+    viewModel { SettingsActivityViewModel(get()) }
     viewModel { FirmwareViewModel(get(), get(), get(), get(), get()) }
 }

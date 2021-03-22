@@ -68,6 +68,7 @@ class ImportService : Service(), ImportStateListener, CoroutineScope {
 
 
     override fun onStateChanged(importState: ImportState) {
+        println("SSS > onStateChanged: $importState")
         importStateEventDelegate.offer(importState)
         notificationManager.bind(importState)
     }

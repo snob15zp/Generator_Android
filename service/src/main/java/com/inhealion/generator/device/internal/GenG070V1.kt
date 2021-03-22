@@ -162,13 +162,17 @@ class GenG070V1(address: String) : Generator {
             modbusMasterRTU.setResponseTimeout(1500)
             modbusMasterRTU.writeSingleRegister(SERVER_ADDRESS, 0x20, 1.shl(8))
         } catch (e: Exception) {
-            Timber.w(e, "Send TransmitDone is failed")
+            Timber.w(e, "Unable to send TransmitDone")
         }
     }
 
     override fun close() {
-        _fileImportProgress.close()
-        modbusMasterRTU.disconnect()
+        try {
+            _fileImportProgress.close()
+            modbusMasterRTU.disconnect()
+        } catch (e: Exception) {
+            Timber.w(e, "Close operation is failed")
+        }
     }
 
     private suspend fun writeChunk(data: IntArray) {

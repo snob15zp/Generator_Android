@@ -25,6 +25,7 @@ import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.inhealion.generator.presentation.settings.viewmodel.FirmwareViewModel
+import com.inhealion.generator.service.ImportService
 import org.koin.android.ext.android.inject
 import java.text.SimpleDateFormat
 import java.util.*
@@ -56,9 +57,11 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
             Toast.makeText(requireContext(), getString(R.string.error_invalid_version), Toast.LENGTH_LONG).show()
             return
         }
+        val action = ImportAction.UpdateFirmware(version, viewModel.device!!.address)
+        ImportService.start(requireContext(), action)
         startActivity(
             Intent(requireContext(), ImportActivity::class.java).apply {
-                putExtras(ImportFragmentArgs(ImportAction.UpdateFirmware(version, viewModel.device!!)).toBundle())
+                putExtras(ImportFragmentArgs(action).toBundle())
             }
         )
     }

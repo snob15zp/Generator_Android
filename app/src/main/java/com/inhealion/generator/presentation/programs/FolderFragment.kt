@@ -31,15 +31,15 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initUi()
+        viewModel.state.observe(viewLifecycleOwner) { switchState(it) }
+        viewModel.load()
+    }
 
-        binding.errorOverlay.retryButton.setOnClickListener { viewModel.load() }
-        binding.foldersRecyclerView.adapter = folderAdapter
-        binding.swipeRefreshLayout.setOnRefreshListener { viewModel.refresh() }
-
-        with(viewModel) {
-            state.observe(viewLifecycleOwner) { switchState(it) }
-            load()
-        }
+    private fun initUi() = with(binding) {
+        errorOverlay.retryButton.setOnClickListener { viewModel.load() }
+        foldersRecyclerView.adapter = folderAdapter
+        swipeRefreshLayout.setOnRefreshListener { viewModel.refresh() }
     }
 
     private fun onFolderSelected(id: String) {
@@ -50,28 +50,27 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
     }
 
     private fun switchState(state: State<Pair<UserProfile, List<Folder>>>) = with(binding) {
-        println("RRR > switch state $state")
         when (state) {
             State.Idle -> {
-                binding.swipeRefreshLayout.isRefreshing = false
+                swipeRefreshLayout.isRefreshing = false
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = false
             }
             is State.Failure -> {
-                binding.swipeRefreshLayout.isRefreshing = false
+                swipeRefreshLayout.isRefreshing = false
                 errorOverlay.errorTextView.text = state.error
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = true
             }
             is State.Success -> {
-                binding.swipeRefreshLayout.isRefreshing = false
+                swipeRefreshLayout.isRefreshing = false
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = false
                 itemDivider.isVisible = true
                 bind(state.data.first, state.data.second)
             }
             is State.InProgress -> {
-                binding.swipeRefreshLayout.isRefreshing = false
+                swipeRefreshLayout.isRefreshing = false
                 loadingOverlay.root.isVisible = true
                 errorOverlay.root.isVisible = false
             }

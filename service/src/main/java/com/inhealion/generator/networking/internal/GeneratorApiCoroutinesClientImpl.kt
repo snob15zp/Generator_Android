@@ -48,8 +48,8 @@ internal class GeneratorApiCoroutinesClientImpl(
         .map { extractFiles(it, version) }
 
     override suspend fun logout(): Flow<Unit> = flow {
-        accountStore.remove()
         service.logout()
+        accountStore.remove()
         emit(Unit)
     }
 

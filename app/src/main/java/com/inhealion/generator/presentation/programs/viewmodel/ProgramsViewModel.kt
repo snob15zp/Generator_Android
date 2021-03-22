@@ -51,7 +51,7 @@ class ProgramsViewModel(
 
     fun import(context: Context) = viewModelScope.launch {
         deviceRepository.get().valueOrNull()?.let {
-            ImportService.start(context, ImportAction.ImportFolder(folder.id, it))
+            ImportService.start(context, ImportAction.ImportFolder(folder.id, it.address))
             device.value = it
         } ?: showDiscovery.sendAction()
     }

@@ -34,29 +34,18 @@ class ImportManager(
 
     var listener: ImportStateListener? = null
 
-    var currentState: ImportState = ImportState.Idle
-        private set
-
     private var generator: Generator? = null
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + SupervisorJob()
 
     fun import(importAction: ImportAction) {
-        if (currentState != ImportState.Idle) {
-            postState(currentState)
-            Timber.d("Import is in process: $currentState")
-            return
-        }
-
         postState(ImportState.Downloading)
-        val files = runBlocking { download(importAction) } ?: return
+        val files = runBlocking(coroutineContext) { download(importAction) } ?: return
         importToDevice(importAction, files)
     }
 
     private fun close() {
-        if (!currentState.isActive) return
-
         postState(ImportState.Canceled)
         coroutineContext.cancel()
         try {
@@ -68,18 +57,19 @@ class ImportManager(
     }
 
     private fun importToDevice(importAction: ImportAction, files: Map<String, ByteArray>) {
+        var state: ImportState? = null
         try {
             if (importAction is ImportAction.UpdateFirmware) {
-                if (!importMcuFirmware(importAction.device.address, files)) return
+                if (!importMcuFirmware(importAction.address, files)) return
             }
 
             postState(ImportState.Connecting)
-            connectionFactory.connect(importAction.device.address).let { localGenerator ->
+            connectionFactory.connect(importAction.address).let { localGenerator ->
                 generator = localGenerator
 
                 val totalSize = files.filter { !it.key.endsWith(".bf") }.values.sumOf { it.size }
                 var importedSize = 0
-                launch {
+                launch(coroutineContext) {
                     localGenerator.fileImportProgress.collect {
                         postState(
                             ImportState.Importing(
@@ -104,20 +94,25 @@ class ImportManager(
                 }
             }
             println("RRR > done")
-            postState(ImportState.Finished)
+            state = ImportState.Finished
         } catch (e: Exception) {
             Timber.e(e, "Unable to import data")
-            postState(
-                ImportState.Error(
-                    stringProvider.getString(
-                        R.string.connection_error_message,
-                        importAction.device.address
-                    ), e
-                )
+            state = ImportState.Error(
+                stringProvider.getString(
+                    R.string.connection_error_message,
+                    importAction.address
+                ), e
             )
         } finally {
-            generator?.transmitDone()
-            generator?.close()
+            try {
+                generator?.transmitDone()
+                generator?.close()
+            } catch (e: Exception) {
+                // Ignore
+            }
+
+            coroutineContext.cancel()
+            state?.let { postState(it) }
         }
     }
 
@@ -137,7 +132,6 @@ class ImportManager(
         }
 
     private fun postState(state: ImportState) {
-        currentState = state
         listener?.onStateChanged(state)
     }
 
@@ -220,7 +214,7 @@ class ImportManager(
     private suspend fun downloadFolder(folderId: String): Map<String, ByteArray> {
         val path = api.downloadFolder(folderId).firstOrNull() ?: return emptyMap()
         val files = getFiles(path)
-        val playList = files.keys.joinToString {
+        val playList = files.keys.sorted().joinToString("") {
             Lfov.truncatedFileName(it, MAX_FILENAME_SIZE, true).padEnd(MAX_LINE_NAME_SIZE)
         }
         return files.toMutableMap().apply {
@@ -237,8 +231,7 @@ class ImportManager(
 
     fun reset() {
         close()
-        currentState = ImportState.Idle
-        listener?.onStateChanged(currentState)
+        listener?.onStateChanged(ImportState.Idle)
     }
 
     companion object {

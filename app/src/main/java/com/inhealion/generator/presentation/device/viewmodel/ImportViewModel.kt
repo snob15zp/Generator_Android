@@ -21,7 +21,7 @@ class ImportViewModel(
     init {
         viewModelScope.launch {
             importStateEventDelegate.observe().collect {
-                importState.value = it
+                importState.postValue(it)
             }
         }
     }

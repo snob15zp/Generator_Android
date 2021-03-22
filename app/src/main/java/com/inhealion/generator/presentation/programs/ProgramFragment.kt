@@ -53,7 +53,7 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
 
             programsRecyclerView.adapter = adapter
             (programsRecyclerView.layoutManager as GridLayoutManager).apply {
-                spanCount = 3
+                spanCount = 1
             }
         }
 
@@ -74,7 +74,7 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
     private fun showImportActivity(folderId: String, device: BleDevice) {
         startActivity(
             Intent(requireContext(), ImportActivity::class.java).apply {
-                putExtras(ImportFragmentArgs(ImportAction.ImportFolder(folderId, device)).toBundle())
+                putExtras(ImportFragmentArgs(ImportAction.ImportFolder(folderId, device.address)).toBundle())
             }
         )
     }

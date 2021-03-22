@@ -28,7 +28,10 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
     private val fragmentResultListener = FragmentResultListener { key, _ ->
         when (key) {
-            ERROR_DIALOG_REQUEST_KEY -> back()
+            ERROR_DIALOG_REQUEST_KEY -> {
+                viewModel.cancel(requireContext())
+                back()
+            }
         }
     }
 

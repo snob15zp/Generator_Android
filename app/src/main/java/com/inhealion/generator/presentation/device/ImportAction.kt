@@ -7,11 +7,11 @@ import kotlinx.parcelize.Parcelize
 
 @Keep
 sealed class ImportAction : Parcelable {
-    abstract val device: BleDevice
+    abstract val address: String
 
     @Parcelize
-    data class UpdateFirmware(val version: String, override val device: BleDevice) : ImportAction()
+    data class UpdateFirmware(val version: String, override val address: String) : ImportAction()
 
     @Parcelize
-    data class ImportFolder(val folderId: String, override val device: BleDevice) : ImportAction()
+    data class ImportFolder(val folderId: String, override val address: String) : ImportAction()
 }
