@@ -65,6 +65,7 @@
     <string name="import_service_channel">Import status</string>
     <string name="notice_import_is_in_progress">The import is in progress. This may take several minutes.</string>
     <string name="notice_import_success">Import finished successfully</string>
+    <string name="action_initializing">Initializing…</string>
 
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>

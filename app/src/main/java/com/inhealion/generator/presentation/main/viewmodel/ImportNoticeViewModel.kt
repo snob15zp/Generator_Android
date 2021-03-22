@@ -20,13 +20,13 @@ abstract class ImportNoticeViewModel(
     init {
         viewModelScope.launch {
             importStateEventDelegate.observe().collect {
-                if (!inProgress.xor(it.isActive)) return@collect
+                if (!inProgress xor it.isActive) return@collect
                 importState.value = if (it.isActive) {
                     UiImportState.InProgress
                 } else {
                     when (it) {
-                        ImportState.Finished -> UiImportState.Success
-                        is ImportState.Error -> UiImportState.Failed(it.message)
+                        ImportState.Success -> UiImportState.Success
+                        is ImportState.Failed -> UiImportState.Failed(it.message)
                         else -> null
                     }
                 }

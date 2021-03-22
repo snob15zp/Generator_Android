@@ -16,7 +16,6 @@ import com.inhealion.generator.presentation.dialogs.ERROR_DIALOG_REQUEST_KEY
 import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.service.FileType
-import com.inhealion.generator.service.ImportService
 import com.inhealion.generator.service.ImportState
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -63,6 +62,10 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
                 is ImportAction.ImportFolder -> getString(R.string.import_folder)
                 is ImportAction.UpdateFirmware -> getString(R.string.flash_firmware)
             }
+
+            actionTextView.text = getString(R.string.action_initializing)
+            progressCircular.isVisible = true
+            progressTextView.isVisible = false
         }
 
         with(viewModel) {
@@ -77,7 +80,6 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
     private fun handleImportStateChanged(importState: ImportState) = with(binding) {
         progressCircular.isVisible = importState.isActive
-
         when (importState) {
             ImportState.Connecting -> {
                 actionTextView.text = getString(R.string.action_connecting)
@@ -98,15 +100,14 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
             ImportState.Rebooting -> {
                 progressTextView.isVisible = false
             }
-            is ImportState.Error -> {
-                progressCircular.isVisible = false
+            is ImportState.Failed -> {
                 progressTextView.isVisible = false
                 dialog = MessageDialog.show(
                     parentFragmentManager,
                     MessageDialogData(getString(R.string.error_dialog_title), importState.message)
                 )
             }
-            ImportState.Finished -> {
+            ImportState.Success -> {
                 actionTextView.text = getString(R.string.done)
                 progressTextView.isVisible = false
                 dialog = MessageDialog.show(

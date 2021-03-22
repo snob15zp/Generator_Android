@@ -79,8 +79,9 @@ class SerialPortBluetooth(
     private fun observeCommandChannel(peripheral: Peripheral) = commandChannel.consumeAsFlow().onEach {
         when (it) {
             is Command.Write -> kotlin.runCatching {
-                println("TTT > write byte array ${it.data.toByteArray().toByteString()}")
-                peripheral.write(writeCharacteristic, it.data.toByteArray(), WriteType.WithoutResponse)
+                val bytes = it.data.toByteArray()
+                println("TTT > write byte array ${bytes.toByteString(0, bytes.size)}")
+                peripheral.write(writeCharacteristic, bytes, WriteType.WithoutResponse)
                 stateFlow.emit(DeviceState.WRITE)
             }
             else -> Unit

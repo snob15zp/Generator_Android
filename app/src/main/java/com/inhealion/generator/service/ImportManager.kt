@@ -18,7 +18,6 @@ import com.inhealion.generator.utils.StringProvider
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.onEach
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 import java.io.File
@@ -88,16 +87,16 @@ class ImportManager(
 
                 FileType.values().filter { it != FileType.MCU }.forEach {
                     if (!importByExt(localGenerator, files, it.extension)) {
-                        postState(ImportState.Error(stringProvider.getString(R.string.error_file_transfer)))
+                        postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
                         return
                     }
                 }
             }
             println("RRR > done")
-            state = ImportState.Finished
+            state = ImportState.Success
         } catch (e: Exception) {
             Timber.e(e, "Unable to import data")
-            state = ImportState.Error(
+            state = ImportState.Failed(
                 stringProvider.getString(
                     R.string.connection_error_message,
                     importAction.address
@@ -127,7 +126,7 @@ class ImportManager(
                 is ApiError -> apiErrorStringProvider.getErrorMessage(e)
                 else -> stringProvider.getString(R.string.download_folder_error)
             }
-            postState(ImportState.Error(message, e))
+            postState(ImportState.Failed(message, e))
             null
         }
 
@@ -142,7 +141,7 @@ class ImportManager(
             postState(ImportState.Importing(0, FileType.MCU))
             val data = files.entries.firstOrNull { it.key.endsWith(".bf") }?.value ?: return true
             if (!importMcuFirmwareData(localGenerator, data)) {
-                postState(ImportState.Error(stringProvider.getString(R.string.error_file_transfer)))
+                postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
                 return false
             }
             localGenerator.reboot()
@@ -196,8 +195,8 @@ class ImportManager(
 
         val totalSize = buffer.size
         var importedSize = 0
-        launch {
-            generator.fileImportProgress.onEach {
+        launch(coroutineContext) {
+            generator.fileImportProgress.collect {
                 postState(ImportState.Importing((importedSize * 100) / totalSize, FileType.MCU))
                 importedSize += it.progress
             }
@@ -272,13 +271,13 @@ sealed class ImportState : Parcelable {
     data class Importing(val progress: Int, val fileType: FileType) : ImportState()
 
     @Parcelize
-    data class Error(val message: String, val error: Throwable? = null) : ImportState()
+    data class Failed(val message: String, val error: Throwable? = null) : ImportState()
 
     @Parcelize
     object Canceled : ImportState()
 
     @Parcelize
-    object Finished : ImportState()
+    object Success : ImportState()
 
     val isActive: Boolean get() = this is Connecting || this is Downloading || this is Rebooting || this is Importing
 }

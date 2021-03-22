@@ -15,6 +15,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.inhealion.generator.R
 import com.inhealion.generator.presentation.activity.ImportActivity
 import com.inhealion.generator.presentation.activity.MainActivity
+import com.inhealion.generator.presentation.activity.SettingsActivity
 import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.device.ImportFragmentArgs
 
@@ -50,8 +51,8 @@ class ImportNotificationManager(
 
     fun bind(importState: ImportState) {
         when (importState) {
-            is ImportState.Error -> context.getString(R.string.error_dialog_title) to importState.message
-            is ImportState.Finished -> context.getString(R.string.done) to context.getString(R.string.import_success)
+            is ImportState.Failed -> context.getString(R.string.error_dialog_title) to importState.message
+            is ImportState.Success -> context.getString(R.string.done) to context.getString(R.string.import_success)
             else -> null
         }?.let {
             notifyFinish(it.first, it.second)
@@ -106,15 +107,23 @@ class ImportNotificationManager(
      * Apply intent to open [ImportActivity]
      */
     private fun NotificationCompat.Builder.applyContentIntent(importAction: ImportAction) = apply {
-        val intent = Intent(context, ImportActivity::class.java).apply {
+        val startIntent = Intent(context, ImportActivity::class.java).apply {
             putExtras(ImportFragmentArgs(importAction).toBundle())
             addFlags(FLAG_ACTIVITY_NEW_TASK.or(FLAG_ACTIVITY_REORDER_TO_FRONT))
+        }
+        val intents = when (importAction) {
+            is ImportAction.ImportFolder -> arrayOf(Intent(context, MainActivity::class.java), startIntent)
+            is ImportAction.UpdateFirmware -> arrayOf(
+                Intent(context, MainActivity::class.java),
+                Intent(context, SettingsActivity::class.java),
+                startIntent
+            )
         }
         val pendingIntent = PendingIntent.getActivities(
             context,
             0,
-            arrayOf(Intent(context, MainActivity::class.java), intent),
-            PendingIntent.FLAG_ONE_SHOT
+            intents,
+            PendingIntent.FLAG_UPDATE_CURRENT
         )
         setContentIntent(pendingIntent)
     }
