@@ -24,7 +24,7 @@ class SerialPortBluetooth(
     private val commandChannel = Channel<Command>()
     private val stateFlow = MutableStateFlow(DeviceState.DISCONNECTED)
 
-    private val buffer = ByteBuffer.allocate(1024)
+    private val buffer = ByteBuffer.allocate(2048)
     private var writePosition = AtomicInteger(0)
     private var readPosition = 0
 
