@@ -19,6 +19,8 @@ import com.inhealion.generator.presentation.programs.viewmodel.FolderViewModel
 import com.inhealion.generator.utils.StringProvider
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 class FolderFragment : BaseFragment<FolderFragmentBinding>() {
     override val bindingInflater: (LayoutInflater, ViewGroup?) -> FolderFragmentBinding
@@ -97,7 +99,10 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
             userProfile.surname ?: ""
         )
 
-        birthdayTextView.text = userProfile.birthday
+        birthdayTextView.text = userProfile.birthday?.let { birthday ->
+            val simpleDateFormat = SimpleDateFormat("y-m-d", Locale.ROOT)
+            simpleDateFormat.parse(birthday)?.let { simpleDateFormat.format(it) }
+        }
         phoneTextView.setTextOrHide(userProfile.phone)
         addressTextView.setTextOrHide(userProfile.address)
         emailTextView.setTextOrHide(userProfile.email)

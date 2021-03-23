@@ -5,11 +5,12 @@
     <color name="black_alpha_32">#32000000</color>
     <color name="black_alpha_10">#10000000</color>
 
-    <color name="colorPrimary">#1976d2</color>
+    <color name="colorPrimary">#197bac</color>
     <color name="colorPrimaryDark">#115293</color>
-    <color name="colorAccent">#4791db</color>
+    <color name="colorAccent">#00b0d3</color>
     <color name="colorAccentDark">#ab003c</color>
 
+    <color name="iconColor">#7e8485</color>
     <color name="textColor">#1e1a1a</color>
     <color name="textError">@color/colorAccentDark</color>
     <color name="secondaryTextColor">#45000000</color>

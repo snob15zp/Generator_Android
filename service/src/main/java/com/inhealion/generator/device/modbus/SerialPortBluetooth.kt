@@ -24,17 +24,14 @@ class SerialPortBluetooth(
     private val commandChannel = Channel<Command>()
     private val stateFlow = MutableStateFlow(DeviceState.DISCONNECTED)
 
-    private val buffer = ByteBuffer.allocate(2048)
+    private val buffer = ByteBuffer.allocate(512)
     private var writePosition = AtomicInteger(0)
     private var readPosition = 0
 
-    override fun write(b: Int) {
-        throw NotImplementedError()
-//        commandChannel.offer(Command.Write(ByteBuffer.allocate(1).put(b.toByte())))
-//        waitFor(DeviceState.WRITE)
-    }
+    override fun write(b: Int) = Unit
 
     override fun write(bytes: ByteArray) {
+        clearBufer()
         println("TTT > start write to device, ${bytes.size}")
         if (!isOpened) {
             throw IOException("Port not opened")
@@ -51,6 +48,8 @@ class SerialPortBluetooth(
     }
 
     override fun open() {
+        clearBufer()
+
         val bluetoothDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(serialParameters.device)
         val peripheral = scope.peripheral(bluetoothDevice)
 
@@ -166,13 +165,16 @@ class SerialPortBluetooth(
             peripheral = null
             scope.cancel()
         }
+        clearBufer()
+    }
 
+    override fun isOpened() = peripheral != null
+
+    private fun clearBufer() {
         readPosition = 0
         writePosition.set(0)
         buffer.clear()
     }
-
-    override fun isOpened() = peripheral != null
 
     private fun waitFor(state: DeviceState, timeout: Long = 5000) = runBlocking {
         withTimeout(timeout) { stateFlow.filter { it == state }.first() }
