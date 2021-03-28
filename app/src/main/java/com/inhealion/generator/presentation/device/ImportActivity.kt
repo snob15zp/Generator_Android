@@ -1,10 +1,13 @@
-package com.inhealion.generator.presentation.activity
+package com.inhealion.generator.presentation.device
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportActivityBinding
+import com.inhealion.generator.device.model.BleDevice
 
 class ImportActivity : AppCompatActivity() {
 
@@ -23,6 +26,17 @@ class ImportActivity : AppCompatActivity() {
                     intent.extras
                 )
             }
+        }
+    }
+
+    companion object {
+
+        fun start(context: Context, action: ImportAction) {
+            context.startActivity(intent(context, action))
+        }
+
+        fun intent(context: Context, action: ImportAction) = Intent(context, ImportActivity::class.java).apply {
+            putExtras(ImportFragmentArgs(action).toBundle())
         }
     }
 }

@@ -4,10 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.addCallback
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentResultListener
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.snackbar.Snackbar
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportFragmentBinding
 import com.inhealion.generator.model.MessageDialogData
@@ -37,10 +39,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
     private var dialog: DialogFragment? = null
 
     private val viewModel: ImportViewModel by viewModel {
-        parametersOf(
-            navArgs<ImportFragmentArgs>().value.importAction,
-            navArgs<ImportFragmentArgs>().value.importState
-        )
+        parametersOf(navArgs<ImportFragmentArgs>().value.importAction)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -57,7 +56,6 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
                 viewModel.cancel(requireContext())
                 back()
             }
-            closeImage.setOnClickListener { back() }
             titleTextView.text = when (viewModel.importAction) {
                 is ImportAction.ImportFolder -> getString(R.string.import_folder)
                 is ImportAction.UpdateFirmware -> getString(R.string.flash_firmware)
@@ -70,6 +68,10 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
         with(viewModel) {
             importState.observe(viewLifecycleOwner, ::handleImportStateChanged)
+        }
+
+        activity?.onBackPressedDispatcher?.addCallback {
+            Snackbar.make(binding.root, getString(R.string.import_back_alert_message), Snackbar.LENGTH_LONG).show()
         }
     }
 
@@ -115,7 +117,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
                     MessageDialogData(getString(R.string.done), getString(R.string.import_success))
                 )
             }
-            ImportState.Idle -> Unit
+            ImportState.Idle -> dialog?.dismiss()
             ImportState.Canceled -> Unit
         }
     }

@@ -3,6 +3,7 @@ package com.inhealion.generator.event
 import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 
 open class FlowEventDelegate<T> : EventDelegate<T> {
     var channel: ConflatedBroadcastChannel<T>

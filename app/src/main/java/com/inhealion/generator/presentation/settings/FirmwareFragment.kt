@@ -1,7 +1,5 @@
 package com.inhealion.generator.presentation.settings
 
-import android.app.ActivityOptions
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,11 +13,9 @@ import com.inhealion.generator.databinding.FirmwareFragmentBinding
 import com.inhealion.generator.extension.observe
 import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
-import com.inhealion.generator.presentation.activity.ImportActivity
-import com.inhealion.generator.presentation.activity.SettingsActivity
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
 import com.inhealion.generator.presentation.device.ImportAction
-import com.inhealion.generator.presentation.device.ImportFragmentArgs
+import com.inhealion.generator.presentation.device.ImportActivity
 import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
@@ -59,11 +55,7 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
         }
         val action = ImportAction.UpdateFirmware(version, viewModel.device!!.address)
         ImportService.start(requireContext(), action)
-        startActivity(
-            Intent(requireContext(), ImportActivity::class.java).apply {
-                putExtras(ImportFragmentArgs(action).toBundle())
-            }
-        )
+        ImportActivity.start(requireContext(), action)
     }
 
     override fun setupToolbar(toolbar: Toolbar) = with(toolbar) {

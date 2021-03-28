@@ -1,8 +1,6 @@
 package com.inhealion.generator.presentation.activity
 
-import android.net.Uri
 import android.os.Bundle
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.LiveData
 import androidx.navigation.fragment.NavHostFragment
 import com.inhealion.generator.R

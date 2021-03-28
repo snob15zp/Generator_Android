@@ -33,11 +33,9 @@ class MainViewModel(
         }
     }
 
-
     sealed class Action {
         object ShowLogin : Action()
         object ShowDeviceConnection : Action()
         object ShowFolders : Action()
     }
-
 }

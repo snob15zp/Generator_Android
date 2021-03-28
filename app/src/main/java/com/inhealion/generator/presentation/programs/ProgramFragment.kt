@@ -16,7 +16,7 @@ import com.inhealion.generator.extension.observe
 import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.api.model.Program
-import com.inhealion.generator.presentation.activity.ImportActivity
+import com.inhealion.generator.presentation.device.ImportActivity
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
 import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.device.ImportFragmentArgs
@@ -71,13 +71,8 @@ class ProgramFragment : BaseFragment<ProgramsFragmentBinding>() {
         }
     }
 
-    private fun showImportActivity(folderId: String, device: BleDevice) {
-        startActivity(
-            Intent(requireContext(), ImportActivity::class.java).apply {
-                putExtras(ImportFragmentArgs(ImportAction.ImportFolder(folderId, device.address)).toBundle())
-            }
-        )
-    }
+    private fun showImportActivity(folderId: String, device: BleDevice) =
+        ImportActivity.start(requireActivity(), ImportAction.ImportFolder(folderId, device.address))
 
     private fun handleConnectionResult(result: Bundle) {
         if (result.getBoolean(RESULT_KEY)) {

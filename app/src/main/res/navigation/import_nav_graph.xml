@@ -17,12 +17,5 @@
             android:defaultValue="@null"
             app:argType="com.inhealion.generator.service.ImportState"
             app:nullable="true" />
-        <action
-            android:id="@+id/action_importFragment_to_discoveryFragment"
-            app:destination="@id/discoveryFragment" />
     </fragment>
-    <fragment
-        android:id="@+id/discoveryFragment"
-        android:name="com.inhealion.generator.presentation.device.DiscoveryDialogFragment"
-        android:label="DiscoveryFragment" />
 </navigation>

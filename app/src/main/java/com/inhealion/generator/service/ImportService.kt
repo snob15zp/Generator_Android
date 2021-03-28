@@ -78,7 +78,7 @@ class ImportService : Service(), ImportStateListener, CoroutineScope {
 
         fun start(context: Context, importAction: ImportAction) = context.startService(intent(context, importAction))
 
-        fun intent(context: Context, importAction: ImportAction? = null) =
+        private fun intent(context: Context, importAction: ImportAction? = null) =
             Intent(context, ImportService::class.java).apply {
                 importAction?.let { putExtra(KEY_EXTRA_IMPORT_ACTION, it) }
             }

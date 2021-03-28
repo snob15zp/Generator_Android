@@ -66,6 +66,7 @@
     <string name="notice_import_is_in_progress">The import is in progress. This may take several minutes.</string>
     <string name="notice_import_success">Import finished successfully</string>
     <string name="action_initializing">Initializing…</string>
+    <string name="import_back_alert_message">Do not leave the screen until the import is complete</string>
 
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>

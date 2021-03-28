@@ -13,9 +13,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.PRIORITY_HIGH
 import androidx.core.app.NotificationManagerCompat
 import com.inhealion.generator.R
-import com.inhealion.generator.presentation.activity.ImportActivity
+import com.inhealion.generator.presentation.device.ImportActivity
 import com.inhealion.generator.presentation.activity.MainActivity
-import com.inhealion.generator.presentation.activity.SettingsActivity
+import com.inhealion.generator.presentation.settings.SettingsActivity
 import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.presentation.device.ImportFragmentArgs
 
@@ -107,15 +107,23 @@ class ImportNotificationManager(
      * Apply intent to open [ImportActivity]
      */
     private fun NotificationCompat.Builder.applyContentIntent(importAction: ImportAction) = apply {
-        val startIntent = Intent(context, ImportActivity::class.java).apply {
-            putExtras(ImportFragmentArgs(importAction).toBundle())
-            addFlags(FLAG_ACTIVITY_NEW_TASK.or(FLAG_ACTIVITY_REORDER_TO_FRONT))
+        val startIntent = ImportActivity.intent(context, importAction).apply {
+            addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_REORDER_TO_FRONT)
         }
         val intents = when (importAction) {
-            is ImportAction.ImportFolder -> arrayOf(Intent(context, MainActivity::class.java), startIntent)
+            is ImportAction.ImportFolder -> arrayOf(
+                Intent(context, MainActivity::class.java).apply {
+                    addFlags(FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP)
+                },
+                startIntent
+            )
             is ImportAction.UpdateFirmware -> arrayOf(
-                Intent(context, MainActivity::class.java),
-                Intent(context, SettingsActivity::class.java),
+                Intent(context, MainActivity::class.java).apply {
+                    addFlags(FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP)
+                },
+                Intent(context, SettingsActivity::class.java).apply {
+                    addFlags(FLAG_ACTIVITY_CLEAR_TOP or FLAG_ACTIVITY_SINGLE_TOP)
+                },
                 startIntent
             )
         }

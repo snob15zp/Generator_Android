@@ -1,22 +1,16 @@
 package com.inhealion.generator.presentation.main
 
-import android.app.ActivityOptions
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.viewbinding.ViewBinding
 import com.inhealion.generator.R
-import com.inhealion.generator.networking.ApiError
-import com.inhealion.generator.presentation.activity.SettingsActivity
+import com.inhealion.generator.presentation.settings.SettingsActivity
 import com.inhealion.generator.service.AuthorizationManager
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.android.inject
 
 abstract class BaseFragment<T : ViewBinding> : Fragment() {
@@ -42,8 +36,7 @@ abstract class BaseFragment<T : ViewBinding> : Fragment() {
         toolbar.title = getString(R.string.app_title)
         toolbar.menu.findItem(R.id.menu_info_action)
             .setOnMenuItemClickListener {
-                val options = ActivityOptions.makeSceneTransitionAnimation(requireActivity()).toBundle()
-                startActivity(Intent(requireContext(), SettingsActivity::class.java), options)
+                SettingsActivity.start(requireActivity())
                 true
             }
     }
