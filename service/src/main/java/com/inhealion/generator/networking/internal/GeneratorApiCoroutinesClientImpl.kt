@@ -3,6 +3,7 @@ package com.inhealion.generator.networking.internal
 import android.content.Context
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
+import com.inhealion.generator.networking.LogoutManager
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.api.model.FirmwareVersion
 import com.inhealion.generator.networking.api.model.User
@@ -19,7 +20,8 @@ import java.util.zip.ZipInputStream
 internal class GeneratorApiCoroutinesClientImpl(
     baseUrl: String,
     private val context: Context,
-    private val accountStore: AccountStore
+    private val accountStore: AccountStore,
+    private val logoutManager: LogoutManager
 ) : BaseGeneratorApiClient(context, baseUrl, accountStore), GeneratorApiCoroutinesClient {
     private val downloadFolder = context.getDir("download", Context.MODE_PRIVATE)
     private val refreshTokenAttempt = AtomicInteger(0)
@@ -84,6 +86,8 @@ internal class GeneratorApiCoroutinesClientImpl(
                 Timber.e(e, "Send request failed")
                 if (refreshTokenIsNeeded(e)) {
                     return@flow emitAll(sendRequest(request))
+                } else {
+                    logoutManager.logout()
                 }
 
                 throw when (e) {

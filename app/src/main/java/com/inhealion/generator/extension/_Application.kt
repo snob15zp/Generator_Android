@@ -1,6 +1,8 @@
 package com.inhealion.generator.extension
 
 import android.app.Application
+import com.google.firebase.FirebaseApp
+import com.google.firebase.ktx.Firebase
 import com.inhealion.generator.BuildConfig.BASE_URL
 import com.inhealion.generator.data.RepositoryInitializer
 import com.inhealion.generator.networking.GeneratorApiClient
@@ -20,4 +22,8 @@ fun Application.initGeneratorApiClient() {
 
 fun Application.initRepository() {
     RepositoryInitializer.init(this)
+}
+
+fun Application.initFirebase() {
+    FirebaseApp.initializeApp(this)
 }

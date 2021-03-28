@@ -34,14 +34,19 @@ interface GeneratorApiCoroutinesClient {
             instance ?: throw IllegalStateException("Client not initialized yet")
 
         @JvmStatic
-        fun initialize(baseUrl: String, context: Context, accountStore: AccountStore) {
-            instance = GeneratorApiCoroutinesClient(baseUrl, context, accountStore)
+        fun initialize(baseUrl: String, context: Context, accountStore: AccountStore, logoutManager: LogoutManager) {
+            instance = GeneratorApiCoroutinesClient(baseUrl, context, accountStore, logoutManager)
         }
 
         @JvmStatic
         @JvmName("create")
-        operator fun invoke(baseUrl: String, context: Context, accountStore: AccountStore): GeneratorApiCoroutinesClient {
-            return GeneratorApiCoroutinesClientImpl(baseUrl, context, accountStore)
+        operator fun invoke(
+            baseUrl: String,
+            context: Context,
+            accountStore: AccountStore,
+            logoutManager: LogoutManager
+        ): GeneratorApiCoroutinesClient {
+            return GeneratorApiCoroutinesClientImpl(baseUrl, context, accountStore, logoutManager)
         }
     }
 }

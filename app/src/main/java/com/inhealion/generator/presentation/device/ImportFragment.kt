@@ -73,8 +73,8 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onDestroy() {
+        super.onDestroy()
         dialog?.dismiss()
     }
 

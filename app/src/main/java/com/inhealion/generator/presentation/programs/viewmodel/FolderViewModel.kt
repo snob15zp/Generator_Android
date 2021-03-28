@@ -4,18 +4,21 @@ import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.data.repository.UserRepository
 import com.inhealion.generator.model.*
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
+import com.inhealion.generator.networking.LogoutManager
 import com.inhealion.generator.networking.api.model.Folder
 import com.inhealion.generator.networking.api.model.UserProfile
 import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
 import com.inhealion.generator.utils.ApiErrorStringProvider
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.lang.RuntimeException
 import java.util.concurrent.TimeUnit
 
 class FolderViewModel(
     private val userRepository: UserRepository,
     private val generatorApiCoroutinesClient: GeneratorApiCoroutinesClient,
-    private val apiErrorStringProvider: ApiErrorStringProvider
+    private val apiErrorStringProvider: ApiErrorStringProvider,
+    private val logoutManager: LogoutManager
 ) : BaseViewModel<Pair<UserProfile, List<Folder>>>() {
 
     private var folders: List<Folder>? = null
@@ -28,6 +31,7 @@ class FolderViewModel(
 
             val user = userRepository.get().valueOrNull() ?: run {
                 //postState(State.Failure(stringResource(R.string.error_unknown)))
+                logoutManager.logout()
                 return@launch
             }
             fetch(KEY_USER_PROFILE) { generatorApiCoroutinesClient.fetchUserProfile(user.id!!) }
