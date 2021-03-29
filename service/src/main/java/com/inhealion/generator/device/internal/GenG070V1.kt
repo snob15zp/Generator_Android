@@ -1,5 +1,6 @@
 package com.inhealion.generator.device.internal
 
+import android.content.Context
 import com.inhealion.generator.device.ErrorCodes
 import com.inhealion.generator.device.FileImport
 import com.inhealion.generator.device.Generator
@@ -23,7 +24,7 @@ import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.IOException
 
-class GenG070V1(address: String) : Generator {
+class GenG070V1(address: String, context: Context) : Generator {
     override var ready: Boolean = false
         private set
 
@@ -47,7 +48,7 @@ class GenG070V1(address: String) : Generator {
         }
         val writeCharacteristic = characteristicOf(SERVICE_UUID, WRITE_CHARACTERISTICS_UUID)
         val readCharacteristic = characteristicOf(SERVICE_UUID, READ_CHARACTERISTICS_UUID)
-        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic, readCharacteristic))
+        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(context, writeCharacteristic))
         modbusMasterRTU = ModbusMasterFactory.createModbusMasterRTU(serialParameters)
         if (!tryToInit()) {
             throw IOException("Unable to init device")

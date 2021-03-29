@@ -24,7 +24,7 @@ val serviceModule = module {
         GeneratorApiCoroutinesClient.instance()
     }
     factory<BleDeviceScanner> { BluetoothScannerImpl() }
-    single<DeviceConnectionFactory> { DeviceConnectionFactoryImpl() }
+    single<DeviceConnectionFactory> { DeviceConnectionFactoryImpl(androidContext()) }
     factory { ImportManager(get(), get(), get(), get()) }
     single { ImportNotificationManager(androidContext()) }
 }
