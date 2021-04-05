@@ -205,14 +205,9 @@ class GenG070V1(address: String, context: Context) : Generator {
         private const val MAX_ITEM_SIZE = 136
 
         /**
-         * Максимальный размер названия файла
-         **/
-        const val MAX_FILENAME_SIZE = 26
-
-        /**
          * Максимальный размер названия файла в плэйлисте
          **/
-        const val MAX_LINE_NAME_SIZE = 32
+        const val MAX_FILENAME_SIZE = 64
 
         /**
          * Адрес по-умолчанию

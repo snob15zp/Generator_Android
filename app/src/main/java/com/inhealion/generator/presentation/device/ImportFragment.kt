@@ -100,6 +100,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
                 handleProgressChanged(importState.progress)
             }
             ImportState.Rebooting -> {
+                actionTextView.text = getString(R.string.action_reboot)
                 progressTextView.isVisible = false
             }
             is ImportState.Failed -> {

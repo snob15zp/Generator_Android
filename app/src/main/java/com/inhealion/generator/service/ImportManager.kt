@@ -8,7 +8,6 @@ import com.inhealion.generator.device.DeviceConnectionFactory
 import com.inhealion.generator.device.ErrorCodes
 import com.inhealion.generator.device.Generator
 import com.inhealion.generator.device.internal.GenG070V1.Companion.MAX_FILENAME_SIZE
-import com.inhealion.generator.device.internal.GenG070V1.Companion.MAX_LINE_NAME_SIZE
 import com.inhealion.generator.device.internal.Lfov
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
@@ -55,7 +54,7 @@ class ImportManager(
         }
     }
 
-    private fun importToDevice(importAction: ImportAction, files: Map<String, ByteArray>) {
+    private fun importToDevice(importAction: ImportAction, files: List<FileData>) {
         var state: ImportState? = null
         try {
             if (importAction is ImportAction.UpdateFirmware) {
@@ -66,7 +65,7 @@ class ImportManager(
             connectionFactory.connect(importAction.address).let { localGenerator ->
                 generator = localGenerator
 
-                val totalSize = files.filter { !it.key.endsWith(".bf") }.values.sumOf { it.size }
+                val totalSize = files.filter { !it.name.endsWith(".bf") }.sumOf { it.content.size }
                 var importedSize = 0
                 launch(coroutineContext) {
                     localGenerator.fileImportProgress.collect {
@@ -134,12 +133,12 @@ class ImportManager(
         listener?.onStateChanged(state)
     }
 
-    private fun importMcuFirmware(address: String, files: Map<String, ByteArray>): Boolean {
+    private fun importMcuFirmware(address: String, files: List<FileData>): Boolean {
         postState(ImportState.Connecting)
         connectionFactory.connect(address).let { localGenerator ->
             generator = localGenerator
             postState(ImportState.Importing(0, FileType.MCU))
-            val data = files.entries.firstOrNull { it.key.endsWith(".bf") }?.value ?: return true
+            val data = files.firstOrNull { it.name.endsWith(".bf") }?.content ?: return true
             if (!importMcuFirmwareData(localGenerator, data)) {
                 postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
                 return false
@@ -152,10 +151,10 @@ class ImportManager(
         return true
     }
 
-    private fun importByExt(generator: Generator, files: Map<String, ByteArray>, ext: String): Boolean {
-        files.filter { it.key.endsWith(".$ext") }
-            .forEach { (name, data) ->
-                if (generator.putFile(name, data) != ErrorCodes.NO_ERROR) {
+    private fun importByExt(generator: Generator, files: List<FileData>, ext: String): Boolean {
+        files.filter { it.name.endsWith(".$ext") }
+            .forEach {
+                if (generator.putFile(it.name, it.content) != ErrorCodes.NO_ERROR) {
                     return false
                 }
             }
@@ -205,28 +204,35 @@ class ImportManager(
         return generator.putFile("fw.bf", buffer.toByteArray()) == ErrorCodes.NO_ERROR
     }
 
-    private suspend fun downloadFirmware(version: String): Map<String, ByteArray> {
-        val path = api.downloadFirmware(version).firstOrNull() ?: return emptyMap()
+    private suspend fun downloadFirmware(version: String): List<FileData> {
+        val path = api.downloadFirmware(version).firstOrNull() ?: return emptyList()
         return getFiles(path)
     }
 
-    private suspend fun downloadFolder(folderId: String): Map<String, ByteArray> {
-        val path = api.downloadFolder(folderId).firstOrNull() ?: return emptyMap()
-        val files = getFiles(path)
-        val playList = files.keys.sorted().joinToString("") {
-            Lfov.truncatedFileName(it, MAX_FILENAME_SIZE, true).padEnd(MAX_LINE_NAME_SIZE)
+    private suspend fun downloadFolder(folderId: String): List<FileData> {
+        val path = api.downloadFolder(folderId).firstOrNull() ?: return emptyList()
+        val files = getFiles(path).sortedBy { it.name }
+        val playList = createPlaylist(files)
+        return files.mapIndexed { index, fileData -> FileData("${index}.txt", fileData.content) } + playList
+    }
+
+    private fun createPlaylist(files: List<FileData>): FileData {
+        val buffer = ByteArray(files.size * MAX_FILENAME_SIZE) { 0x20 }
+        var idx: Int
+        files.forEachIndexed { fileIdx, fileData ->
+            idx = 0
+            Lfov.truncatedFileName(fileData.name, MAX_FILENAME_SIZE, true)
+                .toByteArray(Charsets.UTF_8)
+                .forEach { buffer[fileIdx * MAX_FILENAME_SIZE + idx++] = it }
         }
-        return files.toMutableMap().apply {
-            put("freq.pls", playList.toByteArray())
-        }
+        return FileData("freq.${FileType.PLAYLIST.extension}", buffer)
     }
 
     private fun getFiles(path: String) =
         File(path).listFiles()
             //  Exclude pls file. It will creating programmatically.
-            ?.filter { !it.name.endsWith("pls") }
-            ?.map { it.name to it.readBytes() }
-            ?.toMap() ?: emptyMap()
+            ?.filter { !it.name.endsWith(FileType.PLAYLIST.extension) }
+            ?.map { FileData(it.name, it.readBytes()) } ?: emptyList()
 
     fun reset() {
         close()
@@ -237,6 +243,8 @@ class ImportManager(
         private val FILES_IMPORT_ORDER = listOf("rbf", "srec", "bin", "txt", "pls")
     }
 }
+
+class FileData(val name: String, val content: ByteArray)
 
 enum class FileType(val extension: String) {
     MCU("bf"),
