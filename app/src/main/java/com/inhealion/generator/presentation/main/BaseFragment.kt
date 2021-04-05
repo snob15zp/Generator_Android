@@ -8,6 +8,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.viewbinding.ViewBinding
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.inhealion.generator.R
 import com.inhealion.generator.presentation.settings.SettingsActivity
 import com.inhealion.generator.service.AuthorizationManager
@@ -42,8 +43,14 @@ abstract class BaseFragment<T : ViewBinding> : Fragment() {
     }
 
     protected open fun back() {
-        if (!findNavController().popBackStack()) {
-            requireActivity().finish()
+        try {
+            if (!findNavController().popBackStack()) {
+                requireActivity().finish()
+            }
+        } catch (e: Exception) {
+            // Ignore
+            FirebaseCrashlytics.getInstance()
+                .recordException(Exception("Unable to close fragment ${this.javaClass.simpleName}", e))
         }
     }
 }
