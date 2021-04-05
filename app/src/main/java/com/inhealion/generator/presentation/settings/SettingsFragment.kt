@@ -42,9 +42,8 @@ class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.Dis
         }
 
         findPreference<Preference>("logout")?.setOnPreferenceClickListener {
-            lifecycleScope.launch {
-                authorizationManager.logout()
-            }
+            authorizationManager.logout()
+            requireActivity().finish()
             true
         }
     }

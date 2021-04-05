@@ -1,7 +1,5 @@
 package com.inhealion.generator.presentation.settings
 
-import android.app.ActivityOptions
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,16 +13,15 @@ import com.inhealion.generator.databinding.FirmwareFragmentBinding
 import com.inhealion.generator.extension.observe
 import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
-import com.inhealion.generator.presentation.activity.ImportActivity
-import com.inhealion.generator.presentation.activity.SettingsActivity
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
 import com.inhealion.generator.presentation.device.ImportAction
-import com.inhealion.generator.presentation.device.ImportFragmentArgs
+import com.inhealion.generator.presentation.device.ImportActivity
 import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.inhealion.generator.presentation.settings.viewmodel.FirmwareViewModel
+import com.inhealion.generator.service.ImportService
 import org.koin.android.ext.android.inject
 import java.text.SimpleDateFormat
 import java.util.*
@@ -56,11 +53,9 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
             Toast.makeText(requireContext(), getString(R.string.error_invalid_version), Toast.LENGTH_LONG).show()
             return
         }
-        startActivity(
-            Intent(requireContext(), ImportActivity::class.java).apply {
-                putExtras(ImportFragmentArgs(ImportAction.UpdateFirmware(version)).toBundle())
-            }
-        )
+        val action = ImportAction.UpdateFirmware(version, viewModel.device!!.address)
+        ImportService.start(requireContext(), action)
+        ImportActivity.start(requireContext(), action)
     }
 
     override fun setupToolbar(toolbar: Toolbar) = with(toolbar) {

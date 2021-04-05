@@ -34,13 +34,12 @@ class MessageDialog : DialogFragment() {
         fun show(
             fragmentManager: FragmentManager,
             messageDialogData: MessageDialogData
-        ) {
-            MessageDialog().apply {
-                arguments = bundleOf(
-                    KEY_ERROR_DATA to messageDialogData,
-                )
-            }.show(fragmentManager, "ErrorDialog")
+        ) = MessageDialog().apply {
+            arguments = bundleOf(
+                KEY_ERROR_DATA to messageDialogData,
+            )
+        }.also {
+            it.show(fragmentManager, "ErrorDialog")
         }
     }
-
 }

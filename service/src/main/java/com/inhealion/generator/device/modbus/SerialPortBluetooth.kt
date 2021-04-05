@@ -1,6 +1,8 @@
 package com.inhealion.generator.device.modbus
 
 import android.bluetooth.BluetoothAdapter
+import android.content.Context
+import android.os.Environment
 import com.intelligt.modbus.jlibmodbus.serial.SerialParameters
 import com.intelligt.modbus.jlibmodbus.serial.SerialPort
 import com.juul.kable.*
@@ -9,32 +11,33 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import okio.ByteString.Companion.toByteString
 import timber.log.Timber
+import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class SerialPortBluetooth(
     sp: SerialParameters,
     private val writeCharacteristic: Characteristic,
-    private val readCharacteristic: Characteristic
+    private val context: Context
 ) : SerialPort(sp) {
+    private val logFile = File(context.getExternalFilesDir("InHealion"), "modbus.log")
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var peripheral: Peripheral? = null
 
     private val commandChannel = Channel<Command>()
     private val stateFlow = MutableStateFlow(DeviceState.DISCONNECTED)
 
-    private val buffer = ByteBuffer.allocate(1024)
+    private val buffer = ByteBuffer.allocate(MAX_BUFFER_SIZE)
     private var writePosition = AtomicInteger(0)
     private var readPosition = 0
 
-    override fun write(b: Int) {
-        throw NotImplementedError()
-//        commandChannel.offer(Command.Write(ByteBuffer.allocate(1).put(b.toByte())))
-//        waitFor(DeviceState.WRITE)
-    }
+    override fun write(b: Int) = Unit
 
     override fun write(bytes: ByteArray) {
+        clearBufer()
         println("TTT > start write to device, ${bytes.size}")
         if (!isOpened) {
             throw IOException("Port not opened")
@@ -51,6 +54,8 @@ class SerialPortBluetooth(
     }
 
     override fun open() {
+        clearBufer()
+
         val bluetoothDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(serialParameters.device)
         val peripheral = scope.peripheral(bluetoothDevice)
 
@@ -69,7 +74,11 @@ class SerialPortBluetooth(
         peripheral.observe(writeCharacteristic).onEach {
             println("TTT > read data from read characteristics: ${it.toByteString()}")
             val data = unescapeBytes(it)
+            logToFile("READ", data)
             println("TTT > read data ${data.size}, ${buffer.position()} ${writePosition.get()}, $readPosition")
+            if (data.size > MAX_BUFFER_SIZE - buffer.position()) {
+                throw IOException("Unexpected data size ${data.size}, ${buffer.position()}")
+            }
             buffer.put(data)
             writePosition.addAndGet(data.size)
             stateFlow.emit(DeviceState.READ)
@@ -79,8 +88,10 @@ class SerialPortBluetooth(
     private fun observeCommandChannel(peripheral: Peripheral) = commandChannel.consumeAsFlow().onEach {
         when (it) {
             is Command.Write -> kotlin.runCatching {
-                println("TTT > write byte array ${it.data.toByteArray().toByteString()}")
-                peripheral.write(writeCharacteristic, it.data.toByteArray(), WriteType.WithoutResponse)
+                val bytes = it.data.toByteArray()
+                logToFile("WRITE", bytes)
+                println("TTT > write byte array ${bytes.toByteString(0, bytes.size)}")
+                peripheral.write(writeCharacteristic, bytes, WriteType.WithoutResponse)
                 stateFlow.emit(DeviceState.WRITE)
             }
             else -> Unit
@@ -165,13 +176,16 @@ class SerialPortBluetooth(
             peripheral = null
             scope.cancel()
         }
+        clearBufer()
+    }
 
+    override fun isOpened() = peripheral != null
+
+    private fun clearBufer() {
         readPosition = 0
         writePosition.set(0)
         buffer.clear()
     }
-
-    override fun isOpened() = peripheral != null
 
     private fun waitFor(state: DeviceState, timeout: Long = 5000) = runBlocking {
         withTimeout(timeout) { stateFlow.filter { it == state }.first() }
@@ -186,6 +200,15 @@ class SerialPortBluetooth(
             Timber.d("Device state changed: $state")
         }
 
+    private fun logToFile(type: String, data: ByteArray) {
+        if (logFile.exists() && logFile.length() > MAX_LOG_FILE_SIZE) {
+            logFile.delete()
+        }
+        val date = SimpleDateFormat("yyyy-MM-DD HH:mm:ss.SSS", Locale.ROOT).format(Date())
+        val value = data.joinToString("") { it.toUByte().toString(16).padStart(2, '0') }
+        logFile.appendText("$date $type:$value\r\n")
+    }
+
     enum class DeviceState {
         CONNECTED, DISCONNECTED, WRITE, READ
     }
@@ -196,6 +219,8 @@ class SerialPortBluetooth(
     }
 
     companion object {
+        const val MAX_BUFFER_SIZE = 512
+        const val MAX_LOG_FILE_SIZE = 10 * 1024 * 1024
         val WRITE_ESCAPE_BYTES = arrayOf<Byte>(0x1b, 0x25)
         const val ESCAPE_CTRL: Byte = 0x1b
     }

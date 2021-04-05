@@ -52,10 +52,15 @@ interface Generator : Closeable {
     fun reboot(): Boolean
 
     /**
+     * Transmit session is done
+     */
+    fun transmitDone()
+
+    /**
      *  Выполняется по записи части файла, для обновления отображения процесса
      *  Части tuple - Название файла - текущий размер, всего размер
      **/
-    val fileImportProgress: Flow<Int>
+    val fileImportProgress: Flow<FileImport>
 
     companion object {
         fun romBAPrepareMCUFirmware(chunk: ByteArray): Collection<Byte> {
@@ -74,3 +79,5 @@ interface Generator : Closeable {
 
     }
 }
+
+data class FileImport(val fileName: String, val progress: Int)

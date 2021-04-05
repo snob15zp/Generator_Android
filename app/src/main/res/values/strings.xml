@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Generator</string>
-    <string name="account_login">Account Login</string>
+    <string name="account_login">Log in to InHealion</string>
     <string name="sign_in">Sign In</string>
     <string name="login">Login</string>
     <string name="password">Password</string>
@@ -36,6 +36,7 @@
     <string name="percent_value">%1$d%%</string>
     <string name="download_folder_error">Unable to download folder.</string>
     <string name="action_import">Importing…</string>
+    <string name="action_idle">Initializing…</string>
     <string name="action_reboot">Rebooting…</string>
     <string name="error_file_transfer">Data transmission error</string>
     <string name="import_success">Import finished successfully</string>
@@ -58,6 +59,14 @@
     <string name="import_was_canceled">The file transfer process was interrupted.\nStart transfer again?</string>
     <string name="button_no">No</string>
     <string name="button_yes">Yes</string>
+    <string name="device_not_connected_message">Device is not connected</string>
+
+    <string name="import_service_title">Importing</string>
+    <string name="import_service_channel">Import status</string>
+    <string name="notice_import_is_in_progress">The import is in progress. This may take several minutes.</string>
+    <string name="notice_import_success">Import finished successfully</string>
+    <string name="action_initializing">Initializing…</string>
+    <string name="import_back_alert_message">Do not leave the screen until the import is complete</string>
 
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>

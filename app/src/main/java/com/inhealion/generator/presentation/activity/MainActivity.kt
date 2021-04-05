@@ -1,32 +1,35 @@
 package com.inhealion.generator.presentation.activity
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.NavOptions
-import androidx.navigation.createGraph
-import androidx.navigation.findNavController
+import androidx.lifecycle.LiveData
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.fragment.findNavController
 import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ActivityMainBinding
 import com.inhealion.generator.extension.observe
-import com.inhealion.generator.extension.setFragmentResultListener
+import com.inhealion.generator.model.UiImportState
 import com.inhealion.generator.presentation.device.DiscoveryDialogFragment
 import com.inhealion.generator.presentation.login.LoginDialogFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
-import com.inhealion.generator.presentation.main.MainFragmentDirections
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.inhealion.generator.presentation.main.viewmodel.MainViewModel
+import com.inhealion.generator.presentation.view.NoticeView
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private val viewModel: MainViewModel by viewModel()
 
+    override val noticeView: NoticeView
+        get() = binding.noticeView
+
+    override val importState: LiveData<UiImportState>
+        get() = viewModel.importState
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

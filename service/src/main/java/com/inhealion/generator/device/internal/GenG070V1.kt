@@ -1,6 +1,8 @@
 package com.inhealion.generator.device.internal
 
+import android.content.Context
 import com.inhealion.generator.device.ErrorCodes
+import com.inhealion.generator.device.FileImport
 import com.inhealion.generator.device.Generator
 import com.inhealion.service.BuildConfig
 import com.intelligt.modbus.jlibmodbus.Modbus
@@ -22,7 +24,7 @@ import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.IOException
 
-class GenG070V1(address: String) : Generator {
+class GenG070V1(address: String, context: Context) : Generator {
     override var ready: Boolean = false
         private set
 
@@ -35,8 +37,8 @@ class GenG070V1(address: String) : Generator {
 
     private val modbusMasterRTU: ModbusMaster
 
-    private val _fileImportProgress = Channel<Int>()
-    override val fileImportProgress: Flow<Int> get() = _fileImportProgress.consumeAsFlow()
+    private val _fileImportProgress = Channel<FileImport>()
+    override val fileImportProgress: Flow<FileImport> get() = _fileImportProgress.consumeAsFlow()
 
     init {
         Modbus.setLogLevel(if (BuildConfig.DEBUG) Modbus.LogLevel.LEVEL_DEBUG else Modbus.LogLevel.LEVEL_RELEASE)
@@ -46,7 +48,7 @@ class GenG070V1(address: String) : Generator {
         }
         val writeCharacteristic = characteristicOf(SERVICE_UUID, WRITE_CHARACTERISTICS_UUID)
         val readCharacteristic = characteristicOf(SERVICE_UUID, READ_CHARACTERISTICS_UUID)
-        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(writeCharacteristic, readCharacteristic))
+        SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(context, writeCharacteristic))
         modbusMasterRTU = ModbusMasterFactory.createModbusMasterRTU(serialParameters)
         if (!tryToInit()) {
             throw IOException("Unable to init device")
@@ -134,7 +136,9 @@ class GenG070V1(address: String) : Generator {
             Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
                 println("TTT > ---- write chunk ${it.size}")
                 runBlocking { writeChunk(it) }
-                _fileImportProgress.offer(it.size * 2 - it[0].shr(8).and(0xff) - 4 - 1)
+                _fileImportProgress.offer(
+                    FileImport(fileName, it.size * 2 - it[0].shr(8).and(0xff) - 4 - 1)
+                )
             }
             ErrorCodes.NO_ERROR
         } catch (e: Exception) {
@@ -154,8 +158,22 @@ class GenG070V1(address: String) : Generator {
         }
     }
 
+    override fun transmitDone() {
+        try {
+            modbusMasterRTU.setResponseTimeout(1500)
+            modbusMasterRTU.writeSingleRegister(SERVER_ADDRESS, 0x20, 1.shl(8))
+        } catch (e: Exception) {
+            Timber.w(e, "Unable to send TransmitDone")
+        }
+    }
+
     override fun close() {
-        modbusMasterRTU.disconnect()
+        try {
+            _fileImportProgress.close()
+            modbusMasterRTU.disconnect()
+        } catch (e: Exception) {
+            Timber.w(e, "Close operation is failed")
+        }
     }
 
     private suspend fun writeChunk(data: IntArray) {
@@ -189,8 +207,12 @@ class GenG070V1(address: String) : Generator {
         /**
          * Максимальный размер названия файла
          **/
-        const val MAX_FILENAME_SIZE = 12
+        const val MAX_FILENAME_SIZE = 26
 
+        /**
+         * Максимальный размер названия файла в плэйлисте
+         **/
+        const val MAX_LINE_NAME_SIZE = 32
 
         /**
          * Адрес по-умолчанию
