@@ -16,16 +16,21 @@
         app:title="@string/settings_device" />
 
 
-        <Preference
-            app:key="firmware"
-            android:icon="@drawable/ic_baseline_memory_24"
-            android:layout="@layout/settings_item"
-            app:title="@string/settings_firmware" />
+    <Preference
+        android:icon="@drawable/ic_baseline_memory_24"
+        android:layout="@layout/settings_item"
+        app:key="firmware"
+        app:title="@string/settings_firmware" />
 
     <Preference
         android:icon="@drawable/ic_baseline_logout_24"
         android:layout="@layout/settings_logout"
         app:key="logout"
         app:title="@string/settings_logout" />
+
+    <Preference
+        android:layout="@layout/settings_about"
+        app:key="about"
+        app:title="" />
 
 </PreferenceScreen>

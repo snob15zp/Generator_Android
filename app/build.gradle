@@ -8,6 +8,15 @@ plugins {
 apply plugin: 'com.google.firebase.crashlytics'
 apply plugin: 'com.google.gms.google-services'
 
+def appVersionCode
+if (project.hasProperty("CommitCount")) {
+    appVersionCode = Integer.parseInt(project.getProperties().get("CommitCount"))
+} else {
+    appVersionCode = rootProject.ext.gitCount().toInteger()
+}
+
+def appVersionName = "1.1.0"
+
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.1"
@@ -21,8 +30,8 @@ android {
         applicationId "com.inhealion.generator"
         minSdkVersion 23
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

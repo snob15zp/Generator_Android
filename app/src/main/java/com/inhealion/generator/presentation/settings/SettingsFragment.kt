@@ -1,5 +1,7 @@
 package com.inhealion.generator.presentation.settings
 
+import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.widget.Toolbar
@@ -46,6 +48,11 @@ class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.Dis
             requireActivity().finish()
             true
         }
+
+        findPreference<Preference>("about")?.let {
+            val appVersion = getFormattedAppVersion(requireContext())
+            it.title = getString(R.string.settings_version_name, appVersion)
+        }
     }
 
     override fun onResume() {
@@ -75,6 +82,22 @@ class SettingsFragment : PreferenceFragmentCompat(), DiscoveryDialogFragment.Dis
 
     override fun onResult(isDeviceSelected: Boolean) {
         viewModel.loadDeviceInfo()
+    }
+
+    fun getFormattedAppVersion(context: Context): String = with(context) {
+        val manager = this.packageManager
+        val name = this.packageName
+        val info = manager.getPackageInfo(name, PackageManager.GET_ACTIVITIES)
+
+        return buildString {
+            var versionName = info.versionName
+            if (versionName.contains("-")) {
+                versionName = versionName.substring(0, versionName.indexOf("-"))
+            }
+            append(versionName)
+            append(".")
+            append(info.versionCode)
+        }
     }
 
     private fun setupToolbar() {
