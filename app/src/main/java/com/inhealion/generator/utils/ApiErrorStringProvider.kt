@@ -14,6 +14,7 @@ class ApiErrorStringProviderImpl(
     override fun getErrorMessage(error: Throwable) =
         when (error) {
             is ApiError.ServerError -> getApiErrorMessage(error)
+            is ApiError.Unauthorized -> stringProvider.getString(R.string.error_bad_credentials)
             is ApiError.NetworkError -> stringProvider.getString(R.string.network_error)
             else -> stringProvider.getString(R.string.error_unknown)
         }

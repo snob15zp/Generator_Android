@@ -19,5 +19,6 @@
     <color name="color_divider">#3e000000</color>
     <color name="notice_info_bg">#E5F5FD</color>
     <color name="notice_error_bg">#F5E6dD</color>
+    <color name="hint_color">#7e8485</color>
 
 </resources>

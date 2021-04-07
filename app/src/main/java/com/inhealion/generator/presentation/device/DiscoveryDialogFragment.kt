@@ -65,11 +65,13 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.devicesRecyclerView.adapter = adapter
+        with(binding) {
+            devicesRecyclerView.adapter = adapter
 
-        binding.closeImage.setOnClickListener { dismiss() }
-        binding.grantAccessButton.setOnClickListener { gotoSettings() }
-        binding.errorOverlay.retryButton.setOnClickListener { viewModel.start() }
+            closeImage.setOnClickListener { dismiss() }
+            grantAccessButton.setOnClickListener { gotoSettings() }
+            errorOverlay.retryButton.setOnClickListener { viewModel.start() }
+        }
 
         viewModel.apply {
             state.observe(viewLifecycleOwner) { switchToState(it) }
@@ -93,15 +95,16 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
         (targetFragment as? DiscoveryDialogListener)?.onResult(viewModel.isDeviceSelected)
     }
 
-    private fun switchToState(state: State<List<BleDevice>>) {
+    private fun switchToState(state: State<List<BleDevice>>) = with(binding) {
         when (state) {
             is State.Failure -> {
-                binding.progressBar.isVisible = false
-                binding.errorOverlay.root.isVisible = true
-                binding.errorOverlay.errorTextView.text = state.error
+                progressBar.isVisible = false
+                errorOverlay.root.isVisible = true
+                errorOverlay.errorTextView.text = state.error
             }
             is State.Success -> {
-                binding.errorOverlay.root.isVisible = false
+                errorOverlay.root.isVisible = false
+                placeholderOverlay.isVisible = state.data.isEmpty()
                 adapter.submitList((state.data).map {
                     DeviceUiModel(
                         it.name ?: "<Unknown>", it.address
@@ -109,8 +112,9 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
                 })
             }
             is State.InProgress -> {
-                binding.errorOverlay.root.isVisible = false
-                binding.progressBar.isVisible = true
+                placeholderOverlay.isVisible = true
+                errorOverlay.root.isVisible = false
+                progressBar.isVisible = true
             }
             else -> Unit
         }

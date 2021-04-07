@@ -48,15 +48,6 @@
         android:layout_gravity="center_vertical"
         />
     </LinearLayout>
-<!--    <View-->
-<!--        android:id="@+id/item_divider"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="1dp"-->
-<!--        android:background="@color/color_divider"-->
-<!--        app:layout_constraintEnd_toEndOf="@id/guidelineEnd"-->
-<!--        app:layout_constraintStart_toStartOf="@id/guidelineStart"-->
-<!--        app:layout_constraintTop_toBottomOf="@id/guidelineTop" />-->
-
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/devices_recycler_view"
@@ -67,6 +58,48 @@
         app:layout_constraintEnd_toEndOf="@id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@id/guidelineStart"
         app:layout_constraintTop_toBottomOf="@+id/guidelineTop" />
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/placeholderOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/white"
+        android:padding="@dimen/default_margin"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/guidelineBottom"
+        app:layout_constraintEnd_toEndOf="@id/guidelineEnd"
+        app:layout_constraintStart_toStartOf="@id/guidelineStart"
+        app:layout_constraintTop_toBottomOf="@+id/guidelineTop">
+
+        <ImageView
+            android:id="@+id/placeholderImage"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="@dimen/default_margin"
+            android:src="@drawable/ic_baseline_developer_board_off_24"
+            app:layout_constraintBottom_toTopOf="@+id/placeholderText"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed"
+            app:tint="@color/secondaryTextColor" />
+
+        <TextView
+            android:id="@+id/placeholderText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/roboto_regular"
+            android:text="@string/discovery_placeholder"
+            android:textAlignment="center"
+            android:textColor="@color/secondaryTextColor"
+            android:textSize="@dimen/font_size_major"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/placeholderImage" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/permissionRequiredOverlay"

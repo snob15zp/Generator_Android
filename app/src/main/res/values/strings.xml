@@ -67,6 +67,10 @@
     <string name="notice_import_success">Import finished successfully</string>
     <string name="action_initializing">Initializing…</string>
     <string name="import_back_alert_message">Do not leave the screen until the import is complete</string>
+    <string name="content_description_close">Close</string>
+    <string name="content_description_logo">Logo</string>
+    <string name="error_bad_credentials">Invalid login or password</string>
+    <string name="discovery_placeholder">No devices found</string>
 
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>

@@ -2,15 +2,16 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:background="@color/white"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/white">
 
     <ImageView
         android:id="@+id/closeImage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_margin="@dimen/default_margin"
+        android:contentDescription="@string/content_description_close"
         android:src="@drawable/ic_baseline_close_24"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -18,6 +19,7 @@
     <ImageView
         android:layout_width="128dp"
         android:layout_height="128dp"
+        android:contentDescription="@string/content_description_logo"
         android:src="@drawable/ic_icon_full_color"
         app:layout_constraintBottom_toTopOf="@+id/textView"
         app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
@@ -25,57 +27,66 @@
 
     <TextView
         android:id="@+id/textView"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginBottom="@dimen/default_margin"
+        android:layout_marginBottom="@dimen/half_margin"
         android:fontFamily="sans-serif-medium"
+        android:gravity="center"
         android:text="@string/account_login"
         android:textColor="@color/colorPrimaryDark"
         android:textSize="@dimen/font_size_h1"
-        app:layout_constraintBottom_toTopOf="@+id/loginText"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/loginTextLayout"
+        app:layout_constraintEnd_toEndOf="@id/guidelineEnd"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@id/guidelineStart"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.4"
         app:layout_constraintVertical_chainStyle="packed" />
 
-    <TextView
-        android:id="@+id/errorText"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/loginTextLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textColor="@color/textError"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/loginText"
-        app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
-        app:layout_constraintStart_toStartOf="@+id/guidelineStart"
-        app:layout_constraintTop_toBottomOf="@id/textView"
-        tools:text="Something went wrong"
-        tools:visibility="visible" />
-
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/loginText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/default_margin"
         android:hint="@string/login"
-        android:inputType="textAutoComplete"
-        app:layout_constraintBottom_toTopOf="@+id/passwordText"
+        android:textColorHint="@color/hint_color"
+        app:boxBackgroundMode="none"
+        app:layout_constraintBottom_toTopOf="@+id/passwordTextLayout"
         app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@+id/guidelineStart"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintTop_toBottomOf="@+id/textView">
 
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/passwordText"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/loginText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/default_margin"
+            android:inputType="textAutoComplete"
+            android:maxLength="128"
+            android:singleLine="true" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/passwordTextLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/default_margin"
         android:hint="@string/password"
-        android:inputType="textPassword"
+        android:textColorHint="@color/hint_color"
+        app:boxBackgroundMode="none"
         app:layout_constraintBottom_toTopOf="@+id/signInButton"
         app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@+id/guidelineStart"
-        app:layout_constraintTop_toBottomOf="@+id/loginText" />
+        app:layout_constraintTop_toBottomOf="@+id/loginTextLayout">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/passwordText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/default_margin"
+            android:inputType="textPassword"
+            android:maxLength="128"
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/signInButton"
@@ -86,12 +97,12 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@+id/guidelineStart"
-        app:layout_constraintTop_toBottomOf="@+id/passwordText" />
+        app:layout_constraintTop_toBottomOf="@+id/passwordTextLayout" />
 
     <include
         android:id="@+id/loadingOverlay"
-        android:visibility="gone"
-        layout="@layout/loading_dialog" />
+        layout="@layout/loading_dialog"
+        android:visibility="gone" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineStart"

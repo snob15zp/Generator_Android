@@ -14,7 +14,7 @@ import com.inhealion.generator.R
 import com.inhealion.generator.databinding.ImportFragmentBinding
 import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.presentation.device.viewmodel.ImportViewModel
-import com.inhealion.generator.presentation.dialogs.ERROR_DIALOG_REQUEST_KEY
+import com.inhealion.generator.presentation.dialogs.MESSAGE_DIALOG_REQUEST_KEY
 import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.service.FileType
@@ -29,7 +29,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
     private val fragmentResultListener = FragmentResultListener { key, _ ->
         when (key) {
-            ERROR_DIALOG_REQUEST_KEY -> {
+            MESSAGE_DIALOG_REQUEST_KEY -> {
                 viewModel.cancel(requireContext())
                 back()
             }
@@ -46,7 +46,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         super.onViewCreated(view, savedInstanceState)
 
         parentFragmentManager.setFragmentResultListener(
-            ERROR_DIALOG_REQUEST_KEY,
+            MESSAGE_DIALOG_REQUEST_KEY,
             viewLifecycleOwner,
             fragmentResultListener
         )

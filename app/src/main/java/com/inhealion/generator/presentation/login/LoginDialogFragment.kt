@@ -8,11 +8,14 @@ import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
+import com.inhealion.generator.R
 import com.inhealion.generator.databinding.LoginFragmentBinding
 import com.inhealion.generator.extension.hideKeyboard
+import com.inhealion.generator.extension.onTextChanged
 import com.inhealion.generator.extension.requireString
+import com.inhealion.generator.model.MessageDialogData
 import com.inhealion.generator.model.State
-import com.inhealion.generator.networking.api.model.User
+import com.inhealion.generator.presentation.dialogs.MessageDialog
 import com.inhealion.generator.presentation.main.FullscreenDialogFragment
 import com.inhealion.generator.presentation.main.LOGIN_REQUEST_KEY
 import com.inhealion.generator.presentation.main.RESULT_KEY
@@ -30,34 +33,41 @@ class LoginDialogFragment : FullscreenDialogFragment<LoginFragmentBinding>() {
 
         viewModel.state.observe(viewLifecycleOwner) { switchState(it) }
 
-        binding.closeImage.setOnClickListener { dismiss() }
-        binding.signInButton.setOnClickListener {
-            hideKeyboard()
-            viewModel.signIn(
-                binding.loginText.requireString(),
-                binding.passwordText.requireString()
-            )
+        with(binding) {
+            updateButtonState()
+            loginText.onTextChanged { updateButtonState() }
+            passwordText.onTextChanged { updateButtonState() }
+
+            closeImage.setOnClickListener { dismiss() }
+            signInButton.setOnClickListener {
+                hideKeyboard()
+                viewModel.signIn(
+                    loginText.requireString(),
+                    passwordText.requireString()
+                )
+            }
         }
     }
 
-    private fun switchState(state: State<User>) {
+    private fun updateButtonState() = with(binding) {
+        signInButton.isEnabled = !loginText.text.isNullOrBlank() == true && !passwordText.text.isNullOrBlank()
+    }
+
+    private fun switchState(state: State<*>) {
+        binding.loadingOverlay.root.isVisible = !state.isFinished
+
         when (state) {
-            is State.Success<*> -> {
-                binding.loadingOverlay.root.isVisible = false
-                binding.errorText.isVisible = false
-                dismiss()
-            }
-            is State.Failure -> {
-                binding.loadingOverlay.root.isVisible = false
-                binding.errorText.text = state.error
-                binding.errorText.isVisible = true
-            }
-            is State.InProgress -> {
-                binding.loadingOverlay.root.isVisible = true
-            }
+            is State.Success -> dismiss()
+            is State.Failure -> MessageDialog.show(
+                parentFragmentManager,
+                MessageDialogData(
+                    getString(R.string.error_dialog_title),
+                    state.error
+                )
+            )
+            is State.InProgress -> Unit
             else -> {
                 binding.loadingOverlay.root.isVisible = false
-                binding.errorText.isVisible = false
             }
         }
     }

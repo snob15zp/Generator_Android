@@ -59,6 +59,7 @@ internal open class BaseGeneratorApiClient(
 
 
     protected fun handleError(error: Throwable) = when (error) {
+        is ApiError -> error
         is HttpException -> parseHttpException(error)
         is java.net.ConnectException -> ApiError.NetworkError
         else -> ApiError.Unknown

@@ -2,7 +2,6 @@ package com.inhealion.generator.presentation.login
 
 import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.model.State
-import com.inhealion.generator.networking.api.model.User
 import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
 import com.inhealion.generator.service.AuthorizationManager
 import com.inhealion.generator.utils.ApiErrorStringProvider
@@ -13,7 +12,7 @@ import kotlinx.coroutines.launch
 class LoginViewModel(
     private val authorizationManager: AuthorizationManager,
     private val apiErrorStringProvider: ApiErrorStringProvider
-) : BaseViewModel<User>() {
+) : BaseViewModel<Unit>() {
 
     var isLoginSuccess: Boolean = false
         private set
@@ -28,7 +27,7 @@ class LoginViewModel(
                 }
                 .collect {
                     isLoginSuccess = true
-                    postState(State.Success(it))
+                    postState(State.Success(Unit))
                 }
         }
     }

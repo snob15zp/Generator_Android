@@ -19,15 +19,16 @@ import java.util.zip.ZipInputStream
 
 internal class GeneratorApiCoroutinesClientImpl(
     baseUrl: String,
-    private val context: Context,
+    context: Context,
     private val accountStore: AccountStore,
     private val logoutManager: LogoutManager
 ) : BaseGeneratorApiClient(context, baseUrl, accountStore), GeneratorApiCoroutinesClient {
-    private val downloadFolder = context.getDir("download", Context.MODE_PRIVATE)
-    private val refreshTokenAttempt = AtomicInteger(0)
 
-    override suspend fun signIn(login: String, password: String) =
-        sendRequest { service.login(login, password)?.also { accountStore.store(it) } }
+    private val downloadFolder = context.getDir("download", Context.MODE_PRIVATE)
+
+    override suspend fun signIn(login: String, password: String) = sendRequest(false) {
+        service.login(login, password)?.also { accountStore.store(it) }
+    }
 
     override suspend fun fetchFolders(userProfileId: String) = sendRequest { service.fetchFolders(userProfileId) }
 
@@ -76,30 +77,27 @@ internal class GeneratorApiCoroutinesClientImpl(
         return folder.absolutePath
     }
 
-    private suspend fun <T> sendRequest(request: suspend () -> T?): Flow<T> {
+    private suspend fun <T> sendRequest(refreshToken: Boolean = true, request: suspend () -> T?): Flow<T> {
         return flow {
             try {
                 val response = request()
-                refreshTokenAttempt.set(0)
                 response?.let { emit(it) } ?: throw ApiError.ServerError(404, "Resource not found")
             } catch (e: Exception) {
                 Timber.e(e, "Send request failed")
-                if (refreshTokenIsNeeded(e)) {
-                    return@flow emitAll(sendRequest(request))
-                } else {
-                    logoutManager.logout()
+                if (refreshToken) {
+                    if (refreshTokenIsNeeded(e)) {
+                        return@flow emitAll(sendRequest(false, request))
+                    } else {
+                        logoutManager.logout()
+                    }
                 }
-
-                throw when (e) {
-                    is ApiError -> e
-                    else -> handleError(e)
-                }
+                throw handleError(e)
             }
         }
     }
 
     private suspend fun refreshTokenIsNeeded(error: Exception): Boolean =
-        if (error is HttpException && error.code() == 401 && refreshTokenAttempt.getAndIncrement() == 0) {
+        if (error is HttpException && error.code() == 401) {
             try {
                 service.refreshToken()?.token?.let {
                     accountStore.store(User(token = it))
