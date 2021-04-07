@@ -18,7 +18,6 @@ class SharedPrefManager(context: Context) {
             }
         }
 
-
     fun clear() {
         sharedPreferences.edit {
             clear()

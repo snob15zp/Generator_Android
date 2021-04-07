@@ -94,6 +94,9 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
             is ImportState.Importing -> {
                 actionTextView.text = when (importState.fileType) {
                     FileType.MCU -> getString(R.string.action_import_mcu_firmware)
+                    FileType.FPGA -> getString(R.string.action_import_fpga_firmware)
+                    FileType.PLAYLIST,
+                    FileType.FREQUENCY -> getString(R.string.action_import_frequency)
                     else -> getString(R.string.action_import)
                 }
                 progressTextView.isVisible = true

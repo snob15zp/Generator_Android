@@ -257,7 +257,7 @@ enum class FileType(val extension: String) {
 
     companion object {
         fun fromFileName(fileName: String): FileType =
-            values().firstOrNull { fileName.endsWith(it.extension) } ?: UNKNOWN
+            values().firstOrNull { File(fileName).extension == it.extension } ?: UNKNOWN
     }
 }
 

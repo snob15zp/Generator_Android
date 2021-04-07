@@ -22,11 +22,11 @@ class FirmwareViewModel(
     private val connectionFactory: DeviceConnectionFactory,
     private val deviceRepository: DeviceRepository,
     private val versionInfoRepository: VersionInfoRepository,
-    private val stringProvider: StringProvider
+    private val stringProvider: StringProvider,
 ) : BaseViewModel<VersionInfo>() {
 
     val showDiscovery = ActionLiveData()
-    var latestVersion: String? = null
+    var latestVersionName: String? = null
     var device: BleDevice? = null
         private set
 
@@ -44,13 +44,14 @@ class FirmwareViewModel(
             return@launch
         }
 
-        if (!forceReload) {
+        if (!forceReload && isFirmwareUpdated) {
             versionInfoRepository.get().valueOrNull()?.let {
-                latestVersion = it.latestVersion
+                latestVersionName = it.latestVersionName
                 postState(State.Success(it))
                 return@launch
             }
         }
+        isFirmwareUpdated = true
 
         postState(State.InProgress())
         api.getLatestFirmwareVersion()
@@ -58,14 +59,29 @@ class FirmwareViewModel(
             .map { firmwareVersion ->
                 val deviceVersion: String? = try {
                     connectionFactory.connect(device!!.address).use { it.version }
+                        ?.let { normalizeVersion(it) }
                 } catch (e: Exception) {
                     val errorMessage = stringProvider.getString(R.string.connection_error_message, device!!.name ?: "")
                     postState(State.Failure(errorMessage))
                     null
                 }
-                latestVersion = firmwareVersion.version
-                VersionInfo(firmwareVersion.version, deviceVersion, Date()).also { versionInfoRepository.save(it) }
+                latestVersionName = firmwareVersion.version
+                VersionInfo(firmwareVersion.version, normalizeVersion(firmwareVersion.version), deviceVersion, Date())
+                    .also { versionInfoRepository.save(it) }
             }
             .collect { postState(State.Success(it)) }
+    }
+
+    private fun normalizeVersion(version: String) =
+        version.split(".")
+            .mapNotNull { it.toIntOrNull() }
+            .joinToString(".") { it.toString() }
+
+    fun reset() {
+        isFirmwareUpdated = false
+    }
+
+    companion object {
+        private var isFirmwareUpdated = false
     }
 }

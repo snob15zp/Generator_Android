@@ -49,11 +49,12 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
     }
 
     private fun flash() {
-        val version = viewModel.latestVersion ?: run {
+        val version = viewModel.latestVersionName ?: run {
             Toast.makeText(requireContext(), getString(R.string.error_invalid_version), Toast.LENGTH_LONG).show()
             return
         }
         val action = ImportAction.UpdateFirmware(version, viewModel.device!!.address)
+        viewModel.reset()
         ImportService.start(requireContext(), action)
         ImportActivity.start(requireContext(), action)
     }
@@ -76,26 +77,23 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
     }
 
     private fun switchState(state: State<VersionInfo>) = with(binding) {
+        loadingOverlay.root.isVisible = !state.isFinished
+
         when (state) {
             State.Idle -> {
-                loadingOverlay.root.isVisible = false
                 noUpdateTextView.isVisible = false
                 updateButton.isVisible = false
                 latestVersionValueTextView.text = getString(R.string.version_unavailable)
                 deviceVersionValueTextView.text = getString(R.string.settings_device_not_connected)
             }
-            is State.InProgress -> {
-                loadingOverlay.root.isVisible = true
-            }
+            is State.InProgress -> Unit
             is State.Failure -> {
-                loadingOverlay.root.isVisible = false
                 MessageDialog.show(
                     parentFragmentManager,
                     MessageDialogData(getString(R.string.error_dialog_title), state.error)
                 )
             }
             is State.Success -> {
-                loadingOverlay.root.isVisible = false
                 latestVersionValueTextView.text = state.data.latestVersion
                 deviceVersionValueTextView.text = state.data.deviceVersion
                     ?: getString(R.string.settings_device_not_connected)
