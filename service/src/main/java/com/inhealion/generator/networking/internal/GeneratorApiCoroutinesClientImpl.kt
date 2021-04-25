@@ -14,7 +14,6 @@ import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipInputStream
 
 internal class GeneratorApiCoroutinesClientImpl(
@@ -61,6 +60,8 @@ internal class GeneratorApiCoroutinesClientImpl(
     override suspend fun getLatestFirmwareVersion(): Flow<FirmwareVersion> =
         sendRequest { service.getLatestFirmwareVersion() }
 
+    override suspend fun fetchFolder(folderId: String) = sendRequest { service.fetchFolder(folderId) }
+
     private fun extractFiles(responseBody: ResponseBody, name: String): String {
         val folder = File(downloadFolder, name)
         if (folder.exists()) folder.deleteRecursively()
@@ -84,8 +85,8 @@ internal class GeneratorApiCoroutinesClientImpl(
                 response?.let { emit(it) } ?: throw ApiError.ServerError(404, "Resource not found")
             } catch (e: Exception) {
                 Timber.e(e, "Send request failed")
-                if (refreshToken) {
-                    if (refreshTokenIsNeeded(e)) {
+                if (e.isAuthError() && refreshToken) {
+                    if (refreshToken()) {
                         return@flow emitAll(sendRequest(false, request))
                     } else {
                         logoutManager.logout()
@@ -96,19 +97,17 @@ internal class GeneratorApiCoroutinesClientImpl(
         }
     }
 
-    private suspend fun refreshTokenIsNeeded(error: Exception): Boolean =
-        if (error is HttpException && error.code() == 401) {
-            try {
-                service.refreshToken()?.token?.let {
-                    accountStore.store(User(token = it))
-                    true
-                } ?: false
-            } catch (ex: Exception) {
-                //Ignore
-                Timber.w(ex, "Unable to refresh token")
-                false
-            }
-        } else {
+    private suspend fun refreshToken(): Boolean =
+        try {
+            service.refreshToken()?.token?.let {
+                accountStore.store(User(token = it))
+                true
+            } ?: false
+        } catch (ex: Exception) {
+            //Ignore
+            Timber.w(ex, "Unable to refresh token")
             false
         }
+
+    private fun Exception.isAuthError() = (this as? HttpException)?.code() == 401
 }

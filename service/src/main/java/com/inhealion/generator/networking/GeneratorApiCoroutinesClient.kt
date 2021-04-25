@@ -26,6 +26,8 @@ interface GeneratorApiCoroutinesClient {
 
     suspend fun getLatestFirmwareVersion(): Flow<FirmwareVersion>
 
+    suspend fun fetchFolder(folderId: String): Flow<Folder>
+
     companion object {
         private var instance: GeneratorApiCoroutinesClient? = null
 

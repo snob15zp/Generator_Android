@@ -34,4 +34,7 @@ interface GeneratorService {
 
     @GET("/api/firmware/latest")
     suspend fun getLatestFirmwareVersion(): FirmwareVersion
+
+    @GET("/api/folders/{id}")
+    suspend fun fetchFolder(@Path("id") id: String): Folder
 }

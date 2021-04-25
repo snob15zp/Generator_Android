@@ -44,7 +44,7 @@ interface Generator : Closeable {
      *  <param name="content">Содержимое</param>
      *  <returns>True если операция успешна</returns>
      **/
-    fun putFile(fileName: String, content: ByteArray): ErrorCodes
+    fun putFile(fileName: String, content: ByteArray, isEncrypted: Boolean): ErrorCodes
 
     /**
      * Reboot device

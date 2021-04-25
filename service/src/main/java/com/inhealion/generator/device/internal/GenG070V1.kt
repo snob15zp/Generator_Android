@@ -57,12 +57,12 @@ class GenG070V1(address: String, context: Context) : Generator {
 
     override fun tryToInit(): Boolean {
         try {
-            println("TTT > connect")
+            log("connect")
             modbusMasterRTU.setResponseTimeout(750)
             modbusMasterRTU.connect()
             version = readVersion() ?: return false
 
-            println("TTT > read serial")
+            log("read serial")
             serial = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, SERIAL_REGISTER_ADDR, 6)
                 .map { it.toByte() }
                 .toByteArray()
@@ -79,12 +79,12 @@ class GenG070V1(address: String, context: Context) : Generator {
     private fun readVersion(): String? {
         repeat(3) {
             try {
-                println("TTT > read version $it")
+                log("read version $it")
                 val versionData = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
                 return "${versionData[0]}.${versionData[1]}.${versionData[2]}"
 
             } catch (e: Exception) {
-                println("TTT > Error: unable to read version, ${e.message}")
+                log("Error: unable to read version, ${e.message}")
                 //Ignore exception
             }
         }
@@ -96,7 +96,7 @@ class GenG070V1(address: String, context: Context) : Generator {
     }
 
     override fun eraseByExt(ext: String): ErrorCodes {
-        println("TTT > Erase by extension $ext")
+        log("Erase by extension $ext")
         var buffer = ext.toByteArray(Charsets.US_ASCII)
         if (buffer.size % 2 == 1) buffer = buffer.plus(0)
 
@@ -125,16 +125,16 @@ class GenG070V1(address: String, context: Context) : Generator {
     private fun eraseByExt(data: IntArray): ErrorCodes {
         modbusMasterRTU.writeMultipleRegisters(SERVER_ADDRESS, ERASE_FILENAME_REG_ADDR, data)
         modbusMasterRTU.writeSingleCoil(SERVER_ADDRESS, ERASE_FILENAME_COIL_ADDR, true)
-        println("TTT > Erase by extension success")
+        log("Erase by extension success")
         return ErrorCodes.NO_ERROR
     }
 
-    override fun putFile(fileName: String, content: ByteArray): ErrorCodes {
+    override fun putFile(fileName: String, content: ByteArray, isEncrypted: Boolean): ErrorCodes {
         return try {
             modbusMasterRTU.setResponseTimeout(30000)
-            println("TTT > write file $fileName, ${content.size}")
-            Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE).forEach {
-                println("TTT > ---- write chunk ${it.size}")
+            log("write file $fileName, ${content.size}")
+            Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE, isEncrypted).forEach {
+                log("---- write chunk ${it.size}")
                 runBlocking { writeChunk(it) }
                 _fileImportProgress.offer(
                     FileImport(fileName, it.size * 2 - it[0].shr(8).and(0xff) - 4 - 1)
@@ -179,7 +179,7 @@ class GenG070V1(address: String, context: Context) : Generator {
     private suspend fun writeChunk(data: IntArray) {
         repeat(3) {
             try {
-                println("TTT > ---- writeFileRecord $it")
+                log("---- writeFileRecord $it")
                 modbusMasterRTU.writeFileRecord(SERVER_ADDRESS, ModbusFileRecord(0, 0, data))
                 return
             } catch (e: ModbusProtocolException) {
@@ -193,7 +193,13 @@ class GenG070V1(address: String, context: Context) : Generator {
         }
     }
 
+    private fun log(message: String, prefix: String = "GenG070V1 > ") {
+        if (LOG_ENABLED)
+            Timber.d("$prefix$message")
+    }
+
     companion object {
+        private const val LOG_ENABLED = true
         private const val SERVICE_UUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455"
         private const val READ_CHARACTERISTICS_UUID = "49535343-8841-43f4-a8d4-ecbe34729bb3"
         private const val WRITE_CHARACTERISTICS_UUID = "49535343-1e4d-4bd9-ba61-23c647249616"
@@ -202,7 +208,7 @@ class GenG070V1(address: String, context: Context) : Generator {
         /**
          * Максимальный передаваемый юнит
          **/
-        private const val MAX_ITEM_SIZE = 136
+        private const val MAX_ITEM_SIZE = 130
 
         /**
          * Максимальный размер названия файла в плэйлисте

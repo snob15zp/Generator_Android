@@ -20,7 +20,11 @@ data class Folder(
     val expiresIn: Long,
 
     @Json(name = "created_at")
-    val createdAt: Date
+    val createdAt: Date,
+
+    @Json(name = "is_encrypted")
+    val isEncrypted: Boolean = false
+
 ) : Parcelable {
 
     val expiredAt: Date

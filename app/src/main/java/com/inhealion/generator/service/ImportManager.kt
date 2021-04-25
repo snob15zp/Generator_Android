@@ -15,8 +15,10 @@ import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.utils.ApiErrorStringProvider
 import com.inhealion.generator.utils.StringProvider
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.single
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 import java.io.File
@@ -56,16 +58,21 @@ class ImportManager(
 
     private fun importToDevice(importAction: ImportAction, files: List<FileData>) {
         var state: ImportState? = null
+        val localFiles = files.toMutableList()
         try {
             if (importAction is ImportAction.UpdateFirmware) {
-                if (!importMcuFirmware(importAction.address, files)) return
+                localFiles.firstOrNull { it.name.endsWith(".${FileType.MCU.extension}") }
+                    ?.let {
+                        localFiles.remove(it)
+                        if (!importMcuFirmware(importAction.address, it)) return
+                    }
             }
 
             postState(ImportState.Connecting)
             connectionFactory.connect(importAction.address).let { localGenerator ->
                 generator = localGenerator
 
-                val totalSize = files.filter { !it.name.endsWith(".bf") }.sumOf { it.content.size }
+                val totalSize = localFiles.sumOf { it.content.size }
                 var importedSize = 0
                 launch(coroutineContext) {
                     localGenerator.fileImportProgress.collect {
@@ -85,7 +92,7 @@ class ImportManager(
                 }
 
                 FileType.values().filter { it != FileType.MCU }.forEach {
-                    if (!importByExt(localGenerator, files, it.extension)) {
+                    if (!importByExt(localGenerator, localFiles, it.extension)) {
                         postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
                         return
                     }
@@ -133,13 +140,12 @@ class ImportManager(
         listener?.onStateChanged(state)
     }
 
-    private fun importMcuFirmware(address: String, files: List<FileData>): Boolean {
+    private fun importMcuFirmware(address: String, data: FileData): Boolean {
         postState(ImportState.Connecting)
         connectionFactory.connect(address).let { localGenerator ->
             generator = localGenerator
             postState(ImportState.Importing(0, FileType.MCU))
-            val data = files.firstOrNull { it.name.endsWith(".bf") }?.content ?: return true
-            if (!importMcuFirmwareData(localGenerator, data)) {
+            if (!importMcuFirmwareData(localGenerator, data.content)) {
                 postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
                 return false
             }
@@ -154,7 +160,7 @@ class ImportManager(
     private fun importByExt(generator: Generator, files: List<FileData>, ext: String): Boolean {
         files.filter { it.name.endsWith(".$ext") }
             .forEach {
-                if (generator.putFile(it.name, it.content) != ErrorCodes.NO_ERROR) {
+                if (generator.putFile(it.name, it.content, it.isEncrypted) != ErrorCodes.NO_ERROR) {
                     return false
                 }
             }
@@ -201,7 +207,7 @@ class ImportManager(
             }
         }
 
-        return generator.putFile("fw.bf", buffer.toByteArray()) == ErrorCodes.NO_ERROR
+        return generator.putFile(FileType.MCU.fullName, buffer.toByteArray(), false) == ErrorCodes.NO_ERROR
     }
 
     private suspend fun downloadFirmware(version: String): List<FileData> {
@@ -210,10 +216,17 @@ class ImportManager(
     }
 
     private suspend fun downloadFolder(folderId: String): List<FileData> {
+        val folder = api.fetchFolder(folderId).single()
         val path = api.downloadFolder(folderId).firstOrNull() ?: return emptyList()
         val files = getFiles(path).sortedBy { it.name }
         val playList = createPlaylist(files)
-        return files.mapIndexed { index, fileData -> FileData("${index}.txt", fileData.content) } + playList
+        return files.mapIndexed { index, fileData ->
+            FileData(
+                "${index}.txt",
+                fileData.content,
+                folder.isEncrypted
+            )
+        } + playList
     }
 
     private fun createPlaylist(files: List<FileData>): FileData {
@@ -225,14 +238,21 @@ class ImportManager(
                 .toByteArray(Charsets.UTF_8)
                 .forEach { buffer[fileIdx * MAX_FILENAME_SIZE + idx++] = it }
         }
-        return FileData("freq.${FileType.PLAYLIST.extension}", buffer)
+        return FileData(FileType.PLAYLIST.fullName, buffer, false)
     }
 
     private fun getFiles(path: String) =
         File(path).listFiles()
             //  Exclude pls file. It will creating programmatically.
             ?.filter { !it.name.endsWith(FileType.PLAYLIST.extension) }
-            ?.map { FileData(it.name, it.readBytes()) } ?: emptyList()
+            ?.map {
+                val name = when (val type = FileType.fromFileName(it.name)) {
+                    FileType.FREQUENCY,
+                    FileType.UNKNOWN -> it.name
+                    else -> type.fullName
+                }
+                FileData(name, it.readBytes(), false)
+            } ?: emptyList()
 
     fun reset() {
         close()
@@ -244,16 +264,18 @@ class ImportManager(
     }
 }
 
-class FileData(val name: String, val content: ByteArray)
+class FileData(val name: String, val content: ByteArray, val isEncrypted: Boolean)
 
-enum class FileType(val extension: String) {
-    MCU("bf"),
-    FPGA("rbf"),
-    BATTERY_CALIBRATION("srec"),
-    USB_CHARGER("bin"),
-    FREQUENCY("txt"),
-    PLAYLIST("pls"),
-    UNKNOWN("unknown");
+enum class FileType(val extension: String, val fileName: String) {
+    MCU("bf", "fw"),
+    FPGA("rbf", "FPGA"),
+    BATTERY_CALIBRATION("srec", "bq28z610"),
+    USB_CHARGER("bin", "tps65987"),
+    FREQUENCY("txt", ""),
+    PLAYLIST("pls", "freq"),
+    UNKNOWN("unknown", "");
+
+    val fullName = "$fileName.$extension"
 
     companion object {
         fun fromFileName(fileName: String): FileType =

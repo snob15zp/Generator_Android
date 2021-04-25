@@ -48,6 +48,11 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
         binding.updateButton.setOnClickListener { flash() }
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.load()
+    }
+
     private fun flash() {
         val version = viewModel.latestVersionName ?: run {
             Toast.makeText(requireContext(), getString(R.string.error_invalid_version), Toast.LENGTH_LONG).show()

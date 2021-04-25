@@ -2,6 +2,7 @@ package com.inhealion.generator.device.internal
 
 import com.inhealion.generator.device.modbus.SerialPortBluetooth.Companion.WRITE_ESCAPE_BYTES
 import com.intelligt.modbus.jlibmodbus.utils.DataUtils
+import timber.log.Timber
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -12,17 +13,18 @@ class Lfov(
     private val content: ByteArray,
     private val maxFileNameSize: Int,
     private val maxPayloadSize: Int,
+    private val isEncrypted: Boolean,
 ) : Iterator<IntArray> {
 
     private var position = 0
     private val truncatedFileName = truncatedFileName(fileName, maxFileNameSize)
 
     override fun hasNext() = (position < content.size).also {
-        println("TTT > hasNext: $it")
+        log("hasNext: $it")
     }
 
     override fun next(): IntArray {
-        println("TTT > position: $position")
+        log("position: $position")
         if (position >= content.size) {
             throw NoSuchElementException()
         }
@@ -38,7 +40,7 @@ class Lfov(
         val isPacketSizeOdd = pktSz % 2 == 1
         if (isPacketSizeOdd) pktSz += 1
 
-        println("TTT > Allocate buffer: $position, $payloadSz, $pktSz, $maxPayloadSize, ${content.size}")
+        log("Allocate buffer: $position, $payloadSz, $pktSz, $maxPayloadSize, ${content.size}")
         val output = ByteBuffer.allocate(pktSz).apply { order(ByteOrder.LITTLE_ENDIAN) }
 
         output.put((if (isPacketSizeOdd) truncatedFileName.length + 1 else truncatedFileName.length).toByte())
@@ -49,7 +51,7 @@ class Lfov(
         if ((content.size - position) <= payloadSz) {
             ptrFlags = ptrFlags.or(1.shl(31))
         }
-        if (IS_ENCRYPTED) {
+        if (isEncrypted) {
             ptrFlags = ptrFlags.or(1.shl(30))
         }
         output.putInt(ptrFlags)
@@ -60,8 +62,13 @@ class Lfov(
         return DataUtils.BeToIntArray(result.copyOfRange(0, pktSz))
     }
 
+    private fun log(message: String, prefix: String = "Lfov > ") {
+        if (LOG_ENABLED)
+            Timber.d("$prefix$message")
+    }
+
     companion object {
-        private const val IS_ENCRYPTED = false
+        private const val LOG_ENABLED = true
 
         fun truncatedFileName(fileName: String, maxFileNameSize: Int, withoutExtension: Boolean = false) =
             File(fileName).run {

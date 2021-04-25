@@ -38,7 +38,7 @@ class SerialPortBluetooth(
 
     override fun write(bytes: ByteArray) {
         clearBufer()
-        println("TTT > start write to device, ${bytes.size}")
+        log("start write to device, ${bytes.size}")
         if (!isOpened) {
             throw IOException("Port not opened")
         }
@@ -50,7 +50,7 @@ class SerialPortBluetooth(
             )
         )
         waitFor(DeviceState.WRITE)
-        println("TTT > finish write to device")
+        log("finish write to device")
     }
 
     override fun open() {
@@ -59,7 +59,7 @@ class SerialPortBluetooth(
         val bluetoothDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(serialParameters.device)
         val peripheral = scope.peripheral(bluetoothDevice)
 
-        println("TTT > waiting for connect...")
+        log("waiting for connect...")
         runBlocking(scope.coroutineContext) { peripheral.connect() }
         observeStateHandler(peripheral).launchIn(scope)
         observeCharacteristicNotifications(peripheral).launchIn(scope)
@@ -67,15 +67,15 @@ class SerialPortBluetooth(
 
         this.peripheral = peripheral
 
-        println("TTT > connected")
+        log("connected")
     }
 
     private fun observeCharacteristicNotifications(peripheral: Peripheral) =
         peripheral.observe(writeCharacteristic).onEach {
-            println("TTT > read data from read characteristics: ${it.toByteString()}")
+            log("read data from read characteristics: ${it.toByteString()}")
             val data = unescapeBytes(it)
             logToFile("READ", data)
-            println("TTT > read data ${data.size}, ${buffer.position()} ${writePosition.get()}, $readPosition")
+            log("read data ${data.size}, ${buffer.position()} ${writePosition.get()}, $readPosition")
             if (data.size > MAX_BUFFER_SIZE - buffer.position()) {
                 throw IOException("Unexpected data size ${data.size}, ${buffer.position()}")
             }
@@ -90,7 +90,7 @@ class SerialPortBluetooth(
             is Command.Write -> kotlin.runCatching {
                 val bytes = it.data.toByteArray()
                 logToFile("WRITE", bytes)
-                println("TTT > write byte array ${bytes.toByteString(0, bytes.size)}")
+                log("write byte array ${bytes.toByteString(0, bytes.size)}")
                 peripheral.write(writeCharacteristic, bytes, WriteType.WithoutResponse)
                 stateFlow.emit(DeviceState.WRITE)
             }
@@ -163,7 +163,7 @@ class SerialPortBluetooth(
 
     private fun clearReadBufferIfNeeded() {
         if (readPosition >= writePosition.get()) {
-            println("TTT > read end")
+            log("read end")
             readPosition = 0
             writePosition.set(0)
             buffer.clear()
@@ -201,6 +201,8 @@ class SerialPortBluetooth(
         }
 
     private fun logToFile(type: String, data: ByteArray) {
+        if (!LOG_TO_FILE_ENABLED) return
+
         if (logFile.exists() && logFile.length() > MAX_LOG_FILE_SIZE) {
             logFile.delete()
         }
@@ -218,7 +220,15 @@ class SerialPortBluetooth(
         object Read : Command()
     }
 
+    private fun log(message: String, prefix: String = "SPBle > ") {
+        if (LOG_ENABLED)
+            Timber.d("$prefix$message")
+    }
+
     companion object {
+        private const val LOG_ENABLED = true
+        private const val LOG_TO_FILE_ENABLED = true
+
         const val MAX_BUFFER_SIZE = 512
         const val MAX_LOG_FILE_SIZE = 10 * 1024 * 1024
         val WRITE_ESCAPE_BYTES = arrayOf<Byte>(0x1b, 0x25)
