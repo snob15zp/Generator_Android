@@ -30,4 +30,6 @@ enum class ErrorCodes(value: Int) {
     /// Критическая ошибка
     /// </summary>
     FATAL_ERROR(0x85),
+
+    CANCELED(0xff),
 }

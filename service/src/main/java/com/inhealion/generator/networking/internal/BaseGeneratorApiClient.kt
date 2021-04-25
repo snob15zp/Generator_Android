@@ -17,6 +17,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import timber.log.Timber
 import java.io.File
+import java.net.UnknownHostException
 import java.util.*
 
 internal open class BaseGeneratorApiClient(
@@ -61,6 +62,7 @@ internal open class BaseGeneratorApiClient(
     protected fun handleError(error: Throwable) = when (error) {
         is ApiError -> error
         is HttpException -> parseHttpException(error)
+        is UnknownHostException,
         is java.net.ConnectException -> ApiError.NetworkError
         else -> ApiError.Unknown
     }.also {

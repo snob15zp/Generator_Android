@@ -16,7 +16,11 @@ class ImportViewModel(
     val importState = importStateEventDelegate.observe().asLiveData()
 
     fun cancel(context: Context) {
+        ImportService.cancel(context)
+    }
+
+    fun stop(context: Context) {
         ImportService.stop(context)
-        importStateEventDelegate.offer(ImportState.Canceled)
+        importStateEventDelegate.offer(ImportState.Idle)
     }
 }

@@ -15,7 +15,6 @@ import com.inhealion.generator.presentation.device.ImportAction
 import com.inhealion.generator.utils.ApiErrorStringProvider
 import com.inhealion.generator.utils.StringProvider
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.single
@@ -35,18 +34,26 @@ class ImportManager(
     var listener: ImportStateListener? = null
 
     private var generator: Generator? = null
+    private var isCanceled = false
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + SupervisorJob()
 
     fun import(importAction: ImportAction) {
+        isCanceled = false
         postState(ImportState.Downloading)
         val files = runBlocking(coroutineContext) { download(importAction) } ?: return
         importToDevice(importAction, files)
     }
 
+    fun cancel() {
+        isCanceled = true
+        postState(ImportState.Canceling)
+        generator?.cancel()
+    }
+
     private fun close() {
-        postState(ImportState.Canceled)
+        isCanceled = false
         coroutineContext.cancel()
         try {
             generator?.close()
@@ -87,13 +94,11 @@ class ImportManager(
                 }
 
                 if (importAction is ImportAction.ImportFolder) {
-                    localGenerator.eraseByExt("txt")
-                    localGenerator.eraseByExt("pls")
+                    localGenerator.eraseByExt(FileType.FREQUENCY.extension)
+                    localGenerator.eraseByExt(FileType.PLAYLIST.extension)
                 }
-
                 FileType.values().filter { it != FileType.MCU }.forEach {
                     if (!importByExt(localGenerator, localFiles, it.extension)) {
-                        postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
                         return
                     }
                 }
@@ -137,6 +142,7 @@ class ImportManager(
         }
 
     private fun postState(state: ImportState) {
+        if (isCanceled && state is ImportState.Importing) return
         listener?.onStateChanged(state)
     }
 
@@ -146,7 +152,6 @@ class ImportManager(
             generator = localGenerator
             postState(ImportState.Importing(0, FileType.MCU))
             if (!importMcuFirmwareData(localGenerator, data.content)) {
-                postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
                 return false
             }
             localGenerator.reboot()
@@ -160,11 +165,26 @@ class ImportManager(
     private fun importByExt(generator: Generator, files: List<FileData>, ext: String): Boolean {
         files.filter { it.name.endsWith(".$ext") }
             .forEach {
-                if (generator.putFile(it.name, it.content, it.isEncrypted) != ErrorCodes.NO_ERROR) {
+                val result = generator.putFile(it.name, it.content, it.isEncrypted)
+                if (result != ErrorCodes.NO_ERROR) {
+                    if (result == ErrorCodes.CANCELED) {
+                        cancelAndClose(FileType.fromFileName(it.name), generator)
+                    } else {
+                        postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
+                    }
                     return false
                 }
             }
         return true
+    }
+
+    private fun cancelAndClose(fileType: FileType, generator: Generator) {
+        try {
+            generator.eraseByExt(fileType.extension)
+        } catch (e: Exception) {
+            //Ignore
+        }
+        postState(ImportState.Canceled)
     }
 
     private suspend fun awaitDeviceConnection(address: String) {
@@ -207,7 +227,17 @@ class ImportManager(
             }
         }
 
-        return generator.putFile(FileType.MCU.fullName, buffer.toByteArray(), false) == ErrorCodes.NO_ERROR
+        val result = generator.putFile(FileType.MCU.fullName, buffer.toByteArray(), false)
+        return if (result != ErrorCodes.NO_ERROR) {
+            if (result == ErrorCodes.CANCELED) {
+                cancelAndClose(FileType.MCU, generator)
+            } else {
+                postState(ImportState.Failed(stringProvider.getString(R.string.error_file_transfer)))
+            }
+            false
+        } else {
+            true
+        }
     }
 
     private suspend fun downloadFirmware(version: String): List<FileData> {
@@ -255,6 +285,7 @@ class ImportManager(
             } ?: emptyList()
 
     fun reset() {
+        postState(ImportState.Idle)
         close()
         listener?.onStateChanged(ImportState.Idle)
     }
@@ -304,12 +335,15 @@ sealed class ImportState : Parcelable {
     data class Failed(val message: String, val error: Throwable? = null) : ImportState()
 
     @Parcelize
+    object Canceling : ImportState()
+
+    @Parcelize
     object Canceled : ImportState()
 
     @Parcelize
     object Success : ImportState()
 
-    val isActive: Boolean get() = this is Connecting || this is Downloading || this is Rebooting || this is Importing
+    val isActive: Boolean get() = this is Connecting || this is Downloading || this is Rebooting || this is Importing || this is Canceling
 }
 
 interface ImportStateListener {

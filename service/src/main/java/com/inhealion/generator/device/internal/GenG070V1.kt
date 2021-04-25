@@ -16,13 +16,20 @@ import com.intelligt.modbus.jlibmodbus.serial.SerialUtils
 import com.intelligt.modbus.jlibmodbus.utils.DataUtils
 import com.intelligt.modbus.jlibmodbus.utils.ModbusExceptionCode
 import com.juul.kable.characteristicOf
+import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Phaser
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 class GenG070V1(address: String, context: Context) : Generator {
     override var ready: Boolean = false
@@ -40,6 +47,9 @@ class GenG070V1(address: String, context: Context) : Generator {
     private val _fileImportProgress = Channel<FileImport>()
     override val fileImportProgress: Flow<FileImport> get() = _fileImportProgress.consumeAsFlow()
 
+    private val canceled = AtomicBoolean(false)
+    private val cancelPhaser = Phaser(1)
+
     init {
         Modbus.setLogLevel(if (BuildConfig.DEBUG) Modbus.LogLevel.LEVEL_DEBUG else Modbus.LogLevel.LEVEL_RELEASE)
 
@@ -47,7 +57,6 @@ class GenG070V1(address: String, context: Context) : Generator {
             device = address
         }
         val writeCharacteristic = characteristicOf(SERVICE_UUID, WRITE_CHARACTERISTICS_UUID)
-        val readCharacteristic = characteristicOf(SERVICE_UUID, READ_CHARACTERISTICS_UUID)
         SerialUtils.setSerialPortFactory(SerialPortFactoryBluetooth(context, writeCharacteristic))
         modbusMasterRTU = ModbusMasterFactory.createModbusMasterRTU(serialParameters)
         if (!tryToInit()) {
@@ -58,6 +67,8 @@ class GenG070V1(address: String, context: Context) : Generator {
     override fun tryToInit(): Boolean {
         try {
             log("connect")
+            canceled.set(false)
+
             modbusMasterRTU.setResponseTimeout(750)
             modbusMasterRTU.connect()
             version = readVersion() ?: return false
@@ -134,6 +145,11 @@ class GenG070V1(address: String, context: Context) : Generator {
             modbusMasterRTU.setResponseTimeout(30000)
             log("write file $fileName, ${content.size}")
             Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE, isEncrypted).forEach {
+                if (canceled.getAndSet(false)) {
+                    println("TTT > cancel write")
+                    log("canceled")
+                    return ErrorCodes.CANCELED
+                }
                 log("---- write chunk ${it.size}")
                 runBlocking { writeChunk(it) }
                 _fileImportProgress.offer(
@@ -165,6 +181,10 @@ class GenG070V1(address: String, context: Context) : Generator {
         } catch (e: Exception) {
             Timber.w(e, "Unable to send TransmitDone")
         }
+    }
+
+    override fun cancel() {
+        canceled.set(true)
     }
 
     override fun close() {

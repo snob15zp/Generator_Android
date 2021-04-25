@@ -79,7 +79,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:visibility="gone"
         android:text="@string/cancel"
         app:layout_constraintEnd_toEndOf="@+id/progress_circular"
         app:layout_constraintStart_toStartOf="@+id/progress_circular"

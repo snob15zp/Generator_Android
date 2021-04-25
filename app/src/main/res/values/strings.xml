@@ -59,7 +59,7 @@
     <string name="action_import_fpga_firmware">Import FPGA file…</string>
     <string name="action_import_frequency">Import programs…</string>
 
-    <string name="import_was_canceled">The file transfer process was interrupted.\nStart transfer again?</string>
+    <string name="import_was_canceled">The file transfer process was interrupted.</string>
     <string name="button_no">No</string>
     <string name="button_yes">Yes</string>
     <string name="device_not_connected_message">Device is not connected</string>
@@ -75,6 +75,8 @@
     <string name="error_bad_credentials">Invalid login or password</string>
     <string name="discovery_placeholder">No devices found</string>
     <string name="settings_version_name">Version <xliff:g id="version_name">%1$s</xliff:g></string>
+    <string name="action_canceled">Canceling…</string>
+    <string name="canceled">Canceled</string>
 
     <plurals name="expires_in_month">
         <item quantity="one">Expires in a month</item>

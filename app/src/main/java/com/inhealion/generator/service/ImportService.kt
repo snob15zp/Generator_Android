@@ -30,20 +30,15 @@ class ImportService : Service(), ImportStateListener, CoroutineScope {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val importAction = intent.getParcelableExtra<ImportAction>(KEY_EXTRA_IMPORT_ACTION) ?: return START_NOT_STICKY
         println("SSS > onStartCommand $this")
-
-        job?.cancel()
-        job = launch(coroutineContext) {
-            importManager.reset()
-            importManager.import(importAction)
-            stop()
+        when (intent.getSerializableExtra(KEY_EXTRA_ACTION) as? Action ?: Action.START) {
+            Action.START -> {
+                val importAction =
+                    intent.getParcelableExtra<ImportAction>(KEY_EXTRA_IMPORT_ACTION) ?: return START_NOT_STICKY
+                startImport(importAction)
+            }
+            Action.CANCEL -> cancelImport()
         }
-
-        startForeground(
-            notificationManager.id,
-            notificationManager.create(importAction)
-        )
         return START_STICKY
     }
 
@@ -66,21 +61,48 @@ class ImportService : Service(), ImportStateListener, CoroutineScope {
         notificationManager.bind(importState)
     }
 
+    private fun cancelImport() {
+        importManager.cancel()
+    }
+
+    private fun startImport(importAction: ImportAction) {
+        job?.cancel()
+        job = launch(coroutineContext) {
+            importManager.reset()
+            importManager.import(importAction)
+            stop()
+        }
+
+        startForeground(
+            notificationManager.id,
+            notificationManager.create(importAction)
+        )
+    }
+
     private fun stop() {
         stopForeground(false)
         stopSelf()
     }
 
+    enum class Action {
+        START, CANCEL
+    }
+
     companion object {
         private const val KEY_EXTRA_IMPORT_ACTION = "KEY_EXTRA_IMPORT_ACTION"
+        private const val KEY_EXTRA_ACTION = "KEY_EXTRA_ACTION"
 
         fun stop(context: Context) = context.stopService(intent(context))
 
-        fun start(context: Context, importAction: ImportAction) = context.startService(intent(context, importAction))
+        fun start(context: Context, importAction: ImportAction) =
+            context.startService(intent(context, importAction, Action.START))
 
-        private fun intent(context: Context, importAction: ImportAction? = null) =
+        fun cancel(context: Context) = context.startService(intent(context, action = Action.CANCEL))
+
+        private fun intent(context: Context, importAction: ImportAction? = null, action: Action? = null) =
             Intent(context, ImportService::class.java).apply {
                 importAction?.let { putExtra(KEY_EXTRA_IMPORT_ACTION, it) }
+                action?.let { putExtra(KEY_EXTRA_ACTION, it) }
             }
     }
 

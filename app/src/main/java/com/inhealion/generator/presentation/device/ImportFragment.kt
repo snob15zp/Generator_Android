@@ -30,7 +30,7 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
     private val fragmentResultListener = FragmentResultListener { key, _ ->
         when (key) {
             MESSAGE_DIALOG_REQUEST_KEY -> {
-                viewModel.cancel(requireContext())
+                viewModel.stop(requireContext())
                 back()
             }
         }
@@ -52,9 +52,9 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
         )
 
         with(binding) {
+            cancelButton.isVisible = false
             cancelButton.setOnClickListener {
                 viewModel.cancel(requireContext())
-                back()
             }
             titleTextView.text = when (viewModel.importAction) {
                 is ImportAction.ImportFolder -> getString(R.string.import_folder)
@@ -82,6 +82,8 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
 
     private fun handleImportStateChanged(importState: ImportState) = with(binding) {
         progressCircular.isVisible = importState.isActive
+        cancelButton.isVisible = importState is ImportState.Importing
+
         when (importState) {
             ImportState.Connecting -> {
                 actionTextView.text = getString(R.string.action_connecting)
@@ -122,7 +124,18 @@ class ImportFragment : BaseFragment<ImportFragmentBinding>() {
                 )
             }
             ImportState.Idle -> dialog?.dismiss()
-            ImportState.Canceled -> Unit
+            ImportState.Canceling -> {
+                actionTextView.text = getString(R.string.action_canceled)
+                progressTextView.isVisible = false
+            }
+            ImportState.Canceled -> {
+                actionTextView.text = getString(R.string.canceled)
+                progressTextView.isVisible = false
+                dialog = MessageDialog.show(
+                    parentFragmentManager,
+                    MessageDialogData(getString(R.string.canceled), getString(R.string.import_was_canceled))
+                )
+            }
         }
     }
 
