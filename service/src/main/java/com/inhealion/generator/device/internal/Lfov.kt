@@ -35,7 +35,9 @@ class Lfov(
             sum += if (content[idx] in WRITE_ESCAPE_BYTES) 2 else 1
             idx++
         }
-        val payloadSz = idx - position
+        var payloadSz = idx - position
+        payloadSz = if (payloadSz > 16) (payloadSz / 16) * 16 else payloadSz
+
         var pktSz: Int = 1 + truncatedFileName.length + 4 + payloadSz
         val isPacketSizeOdd = pktSz % 2 == 1
         if (isPacketSizeOdd) pktSz += 1

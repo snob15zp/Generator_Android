@@ -208,7 +208,7 @@ class GenG070V1(address: String, context: Context) : Generator {
         /**
          * Максимальный передаваемый юнит
          **/
-        private const val MAX_ITEM_SIZE = 130
+        private const val MAX_ITEM_SIZE = 128
 
         /**
          * Максимальный размер названия файла в плэйлисте
