@@ -16,7 +16,9 @@ import org.koin.android.ext.android.inject
 
 abstract class BaseFragment<T : ViewBinding> : Fragment() {
 
-    protected lateinit var binding: T
+    private var _binding: T? = null
+    protected val binding get() = _binding!!
+
     protected abstract val bindingInflater: (LayoutInflater, ViewGroup?) -> T
 
     private val toolbar: Toolbar? get() = binding.root.findViewById(R.id.toolbar)
@@ -24,8 +26,13 @@ abstract class BaseFragment<T : ViewBinding> : Fragment() {
     private val authorizationManager: AuthorizationManager by inject()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = bindingInflater.invoke(inflater, container)
+        _binding = bindingInflater.invoke(inflater, container)
         return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

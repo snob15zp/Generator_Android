@@ -71,7 +71,7 @@ class ImportManager(
                 localFiles.firstOrNull { it.name.endsWith(".${FileType.MCU.extension}") }
                     ?.let {
                         localFiles.remove(it)
-                        if (!importMcuFirmware(importAction.address, it)) return
+                        if (!importMcuFirmware(importAction, it)) return
                     }
             }
 
@@ -146,12 +146,13 @@ class ImportManager(
         listener?.onStateChanged(state)
     }
 
-    private fun importMcuFirmware(address: String, data: FileData): Boolean {
+    private fun importMcuFirmware(importAction: ImportAction.UpdateFirmware, data: FileData): Boolean {
         postState(ImportState.Connecting)
+        val address = importAction.address
         connectionFactory.connect(address).let { localGenerator ->
             generator = localGenerator
             postState(ImportState.Importing(0, FileType.MCU))
-            if (!importMcuFirmwareData(localGenerator, data.content)) {
+            if (!importMcuFirmwareData(localGenerator, importAction.version, data.content)) {
                 return false
             }
             localGenerator.reboot()
@@ -202,16 +203,16 @@ class ImportManager(
         }
     }
 
-    private fun importMcuFirmwareData(generator: Generator, data: ByteArray): Boolean {
+    private fun importMcuFirmwareData(generator: Generator, version: String, data: ByteArray): Boolean {
         val strData = String(data)
-        val version = "<version>(\\d+)\\.(\\d+)\\.(\\d+)</version>".toRegex().find(strData)?.groupValues
+        val versionValues = "(\\d+)\\.(\\d+)\\.(\\d+)".toRegex().matchEntire(version)?.groupValues
 
         val calendar = Calendar.getInstance()
         val buffer = mutableListOf(
             0x80.toByte(),
-            version?.get(1)?.toByteOrNull() ?: (calendar.get(Calendar.YEAR) - 2000).toByte(),
-            version?.get(2)?.toByteOrNull() ?: calendar.get(Calendar.MONTH).toByte(),
-            version?.get(3)?.toByteOrNull() ?: calendar.get(Calendar.DATE).toByte()
+            versionValues?.get(1)?.toByteOrNull() ?: (calendar.get(Calendar.YEAR) - 2000).toByte(),
+            versionValues?.get(2)?.toByteOrNull() ?: calendar.get(Calendar.MONTH).toByte(),
+            versionValues?.get(3)?.toByteOrNull() ?: calendar.get(Calendar.DATE).toByte()
         )
 
         "<chunk>(.*)</chunk>".toRegex().findAll(strData).forEach {
