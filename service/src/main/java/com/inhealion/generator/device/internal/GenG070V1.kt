@@ -146,13 +146,12 @@ class GenG070V1(address: String, context: Context) : Generator {
             log("write file $fileName, ${content.size}")
             Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE, isEncrypted).forEach {
                 if (canceled.getAndSet(false)) {
-                    println("TTT > cancel write")
                     log("canceled")
                     return ErrorCodes.CANCELED
                 }
                 log("---- write chunk ${it.size}")
                 runBlocking { writeChunk(it) }
-                _fileImportProgress.offer(
+                _fileImportProgress.trySend(
                     FileImport(fileName, it.size * 2 - it[0].shr(8).and(0xff) - 4 - 1)
                 )
             }

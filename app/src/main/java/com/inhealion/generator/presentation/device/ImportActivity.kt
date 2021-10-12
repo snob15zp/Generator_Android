@@ -36,7 +36,7 @@ class ImportActivity : AppCompatActivity() {
         }
 
         fun intent(context: Context, action: ImportAction) = Intent(context, ImportActivity::class.java).apply {
-            putExtras(ImportFragmentArgs(action).toBundle())
+            putExtras(ImportFragmentArgs.Builder(action).build().toBundle())
         }
     }
 }
