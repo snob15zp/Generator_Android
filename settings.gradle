@@ -2,3 +2,4 @@ include ':data'
 include ':service'
 include ':app'
 rootProject.name = "Generator"
+include ':compose'
