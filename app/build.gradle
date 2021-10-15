@@ -35,7 +35,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField "String", "BASE_URL", "\"https://inhealion.gr/\""
+        buildConfigField "String", "BASE_URL", "\"https://inhealion.gr/device/\""
     }
 
     buildFeatures {
