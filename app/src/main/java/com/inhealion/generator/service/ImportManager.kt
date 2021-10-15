@@ -103,6 +103,7 @@ class ImportManager(
                     }
                 }
             }
+            println("RRR > done")
             state = ImportState.Success
         } catch (e: Exception) {
             Timber.e(e, "Unable to import data")

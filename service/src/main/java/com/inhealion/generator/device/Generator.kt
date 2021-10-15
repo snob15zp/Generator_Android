@@ -71,6 +71,7 @@ interface Generator : Closeable {
             while (iter < chunk.size) {
                 resp.add(chunk[iter])
                 if (iter + 1 < chunk.size && chunk[iter] == 0xba.toByte() && chunk[iter + 1] == 0.toByte()) {
+                    println("NNN > skip zero in 0xba00")
                     iter++
                 }
                 iter++

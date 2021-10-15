@@ -24,11 +24,13 @@ class ImportService : Service(), ImportStateListener, CoroutineScope {
 
     override fun onCreate() {
         super.onCreate()
+        println("SSS > onCreate $this")
         notificationManager = ImportNotificationManager(this)
         importManager.listener = this
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        println("SSS > onStartCommand $this")
         when (intent.getSerializableExtra(KEY_EXTRA_ACTION) as? Action ?: Action.START) {
             Action.START -> {
                 val importAction =
@@ -46,12 +48,15 @@ class ImportService : Service(), ImportStateListener, CoroutineScope {
 
         importManager.listener = null
         importManager.reset()
+
+        println("SSS > onDestroy $this")
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStateChanged(importState: ImportState) {
+        println("SSS > onStateChanged: $importState")
         importStateEventDelegate.offer(importState)
         notificationManager.bind(importState)
     }
