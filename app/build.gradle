@@ -7,7 +7,6 @@ plugins {
     id 'androidx.navigation.safeargs.kotlin'
 }
 
-
 def appVersionCode
 if (project.hasProperty("CommitCount")) {
     appVersionCode = Integer.parseInt(project.getProperties().get("CommitCount"))
@@ -15,11 +14,9 @@ if (project.hasProperty("CommitCount")) {
     appVersionCode = rootProject.ext.gitCount().toInteger()
 }
 
-def appVersionName = "1.1.0"
-
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.1"
+    compileSdkVersion androidCompileSdkVersion
+    buildToolsVersion androidBuildToolsVersion
 
     signingConfigs {
         release keystore.signingConfigs
@@ -28,8 +25,8 @@ android {
 
     defaultConfig {
         applicationId "com.inhealion.generator"
-        minSdkVersion 23
-        targetSdkVersion 30
+        minSdkVersion androidMinSdkVersion
+        targetSdkVersion androidTargetSdkVersion
         versionCode appVersionCode
         versionName appVersionName
 
@@ -51,19 +48,19 @@ android {
         release {
             debuggable true
             signingConfig signingConfigs.release
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             manifestPlaceholders = [crashlyticsCollectionEnabled: "true"]
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 }
 
@@ -71,39 +68,31 @@ dependencies {
     implementation project(":service")
     implementation project(":data")
 
-    implementation 'com.karumi:dexter:6.2.2'
+    implementation deps.androidx.core
+    implementation deps.androidx.preference
+    implementation deps.androidx.fragment
+    implementation deps.androidx.lifecycle_livedata
 
-    implementation("androidx.core:core-ktx:$kotlin_ktx_version")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
+    implementation deps.androidx.nav.fragment
+    implementation deps.androidx.nav.ui
+    implementation deps.androidx.nav.dynamic_features_fragment
 
-    implementation "androidx.preference:preference-ktx:$preference_version"
-    implementation "androidx.fragment:fragment-ktx:1.3.2"
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+    implementation deps.androidx.appcompat
+    implementation deps.androidx.swiperefreshlayout
+    implementation deps.androidx.constraintlayout
 
-    implementation "org.koin:koin-android:$koin_version"
-    implementation "org.koin:koin-androidx-viewmodel:$koin_version"
+    implementation platform(deps.google.firebase.bom)
+    implementation deps.google.firebase.crashlytics
+    implementation deps.google.firebase.analytics
+    implementation deps.google.material
 
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+    implementation deps.koin
+    implementation deps.timber
+    implementation deps.dexter
+    implementation deps.joda
 
-    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
-    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
-    implementation "androidx.navigation:navigation-dynamic-features-fragment:$nav_version"
-    implementation "androidx.navigation:navigation-compose:1.0.0-alpha09"
-
-    implementation platform('com.google.firebase:firebase-bom:26.8.0')
-    implementation 'com.google.firebase:firebase-crashlytics-ktx'
-    implementation 'com.google.firebase:firebase-analytics-ktx'
-
-    implementation "com.jakewharton.timber:timber:$timber_version"
-
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.google.android.material:material:1.3.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-
-    implementation 'net.danlew:android.joda:2.10.9.1'
-
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-    androidTestImplementation "androidx.navigation:navigation-testing:$nav_version"
+    testImplementation deps.test.junit
+    androidTestImplementation deps.test.androidx.junit
+    androidTestImplementation deps.test.androidx.espresso
+    androidTestImplementation deps.test.androidx.nav
 }

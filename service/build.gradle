@@ -6,14 +6,12 @@ plugins {
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.1"
+    compileSdkVersion androidCompileSdkVersion
+    buildToolsVersion androidBuildToolsVersion
 
     defaultConfig {
-        minSdkVersion 23
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion androidMinSdkVersion
+        targetSdkVersion androidTargetSdkVersion
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -26,36 +24,34 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:$kotlin_ktx_version")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinx_coroutines_version"
+    implementation deps.kotlin.stdlib
+    implementation deps.kotlin.coroutines
+    implementation deps.androidx.core
 
-    implementation "com.jakewharton.timber:timber:$timber_version"
-    implementation 'com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.2'
+    implementation deps.koin
 
-    implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
-    implementation "com.squareup.retrofit2:converter-moshi:$retrofit_version"
+    implementation deps.timber
+    implementation deps.kable
+    implementation deps.modbus
 
-    implementation "org.koin:koin-android:$koin_version"
+    implementation deps.squareup.okhttp
+    implementation deps.squareup.retrofit
+    implementation deps.squareup.retrofit_moshi
 
-    implementation "com.squareup.moshi:moshi:$moshi_version"
-    implementation "com.squareup.moshi:moshi-kotlin:$moshi_version"
-    implementation "com.squareup.moshi:moshi-adapters:$moshi_version"
+    implementation deps.squareup.moshi.core
+    implementation deps.squareup.moshi.kotlin
+    implementation deps.squareup.moshi.adapters
 
-    implementation "com.juul.kable:core:0.3.0"
-
-    implementation "com.intelligt.modbus:jlibmodbus:1.2.9.7"
-
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    testImplementation deps.test.junit
+    androidTestImplementation deps.test.androidx.junit
+    androidTestImplementation deps.test.androidx.espresso
 }
