@@ -36,7 +36,9 @@ class AuthorizationManager(
     }
 
     suspend fun signIn(login: String, password: String): Flow<User> =
-        apiClient.signIn(login, password).onEach { userRepository.save(it) }
+        apiClient.signIn(login, password).onEach {
+            userRepository.save(it)
+        }
 
     fun logout() {
         runBlocking(Dispatchers.IO) {

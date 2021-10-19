@@ -20,8 +20,8 @@ class LogoutManagerImpl(
 
     override fun logout() {
         runBlocking {
-            deviceRepository.remove()
-            userRepository.remove()
+//            deviceRepository.remove()
+//            userRepository.remove()
         }
         accountStore.remove()
         sharedPrefManager.clear()

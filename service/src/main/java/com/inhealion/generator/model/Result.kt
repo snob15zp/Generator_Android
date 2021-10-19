@@ -1,5 +1,7 @@
 package com.inhealion.generator.model
 
+import timber.log.Timber
+
 sealed class Result<out T> {
 
     class Success<out T>(val value: T) : Result<T>()
@@ -54,8 +56,10 @@ inline fun <T> Result<T>.onSuccess(action: (value: T) -> Unit): Result<T> {
 
 inline fun <T> tryWithResult(action: () -> T): Result<T> {
     return try {
-        Result.success(action())
+        val result  = action()
+        Result.success(result)
     } catch (ex: Exception) {
+        Timber.e(ex, "TryWithResult action error")
         Result.failure(ex)
     }
 }

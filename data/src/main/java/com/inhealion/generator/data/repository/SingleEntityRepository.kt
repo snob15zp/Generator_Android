@@ -30,6 +30,6 @@ abstract class SingleEntityRepository<T>(private val name: String) : CrudReposit
     }
 
     companion object {
-        private const val KEY = "key"
+        private const val KEY = "key_entity"
     }
 }
