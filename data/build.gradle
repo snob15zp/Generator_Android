@@ -36,7 +36,6 @@ dependencies {
     implementation deps.paper
     implementation deps.koin
 
-    implementation deps.kotlin.stdlib
     implementation deps.kotlin.coroutines
     implementation deps.androidx.core
 

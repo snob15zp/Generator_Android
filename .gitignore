@@ -17,6 +17,8 @@
 .gradle
 local.properties
 
+key
+
 build
 release
 captures
