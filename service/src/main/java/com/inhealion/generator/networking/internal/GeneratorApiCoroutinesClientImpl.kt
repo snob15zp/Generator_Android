@@ -29,9 +29,11 @@ internal class GeneratorApiCoroutinesClientImpl(
         service.login(login, password)?.also { accountStore.store(it) }
     }
 
-    override suspend fun fetchFolders(userProfileId: String) = sendRequest { service.fetchFolders(userProfileId) }
+    override suspend fun fetchFolders(userProfileId: String) =
+        sendRequest { service.fetchFolders(userProfileId) }
 
-    override suspend fun fetchPrograms(folderId: String) = sendRequest { service.fetchPrograms(folderId) }
+    override suspend fun fetchPrograms(folderId: String) =
+        sendRequest { service.fetchPrograms(folderId) }
 
     override suspend fun downloadFolder(folderId: String) = flow {
         service.downloadFolder(folderId)
@@ -55,12 +57,14 @@ internal class GeneratorApiCoroutinesClientImpl(
         emit(Unit)
     }
 
-    override suspend fun fetchUserProfile(userId: String) = sendRequest { service.fetchUserProfile(userId) }
+    override suspend fun fetchUserProfile(userId: String) =
+        sendRequest { service.fetchUserProfile(userId) }
 
     override suspend fun getLatestFirmwareVersion(): Flow<FirmwareVersion> =
         sendRequest { service.getLatestFirmwareVersion() }
 
-    override suspend fun fetchFolder(folderId: String) = sendRequest { service.fetchFolder(folderId) }
+    override suspend fun fetchFolder(folderId: String) =
+        sendRequest { service.fetchFolder(folderId) }
 
     private fun extractFiles(responseBody: ResponseBody, name: String): String {
         val folder = File(downloadFolder, name)
@@ -70,15 +74,25 @@ internal class GeneratorApiCoroutinesClientImpl(
         ZipInputStream(responseBody.byteStream()).use { zipInputStream ->
             var entry = zipInputStream.nextEntry
             while (entry != null) {
-                FileOutputStream(File(folder, entry.name)).use { zipInputStream.copyTo(it) }
-                zipInputStream.closeEntry()
+                val file = File(folder, entry.name)
+                val canonicalPath = file.canonicalPath
+                if (canonicalPath.startsWith(folder.canonicalPath)) {
+                    FileOutputStream(File(folder, entry.name)).use { zipInputStream.copyTo(it) }
+                    zipInputStream.closeEntry()
+                } else {
+                    throw SecurityException("Bad file path: $canonicalPath")
+                }
                 entry = zipInputStream.nextEntry
             }
+
         }
         return folder.absolutePath
     }
 
-    private suspend fun <T> sendRequest(refreshToken: Boolean = true, request: suspend () -> T?): Flow<T> {
+    private suspend fun <T> sendRequest(
+        refreshToken: Boolean = true,
+        request: suspend () -> T?
+    ): Flow<T> {
         return flow {
             try {
                 val response = request()
