@@ -107,7 +107,7 @@
         android:layout_height="0dp"
         android:background="@color/white"
         android:padding="@dimen/default_margin"
-        android:visibility="gone"
+
         app:layout_constraintBottom_toBottomOf="@id/guidelineBottom"
         app:layout_constraintEnd_toEndOf="@id/guidelineEnd"
         app:layout_constraintStart_toStartOf="@id/guidelineStart"

@@ -1,40 +1,34 @@
 package com.inhealion.generator.presentation.device
 
-import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.Manifest.permission.*
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
-import android.widget.Toast
-import androidx.appcompat.widget.Toolbar
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
-import com.inhealion.generator.R
 import com.inhealion.generator.databinding.DiscoveryFragmentBinding
 import com.inhealion.generator.device.model.BleDevice
 import com.inhealion.generator.model.State
 import com.inhealion.generator.presentation.device.adapter.DeviceUiModel
 import com.inhealion.generator.presentation.device.adapter.DiscoveryDeviceAdapter
 import com.inhealion.generator.presentation.device.viewmodel.DiscoveryViewModel
-import com.inhealion.generator.presentation.login.LoginDialogFragment
-import com.inhealion.generator.presentation.main.BaseFragment
 import com.inhealion.generator.presentation.main.CONNECT_REQUEST_KEY
 import com.inhealion.generator.presentation.main.FullscreenDialogFragment
 import com.inhealion.generator.presentation.main.RESULT_KEY
 import com.karumi.dexter.Dexter
+import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
-import com.karumi.dexter.listener.PermissionDeniedResponse
-import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
-import com.karumi.dexter.listener.single.PermissionListener
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
@@ -48,17 +42,21 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
         DiscoveryDeviceAdapter(::onDeviceSelected)
     }
 
-    private val permissionListener = object : PermissionListener {
-        override fun onPermissionGranted(p0: PermissionGrantedResponse?) {
-            binding.permissionRequiredOverlay.isVisible = false
-            viewModel.start()
+    private val permissionListener = object : MultiplePermissionsListener {
+        override fun onPermissionsChecked(report: MultiplePermissionsReport) {
+            if (!report.areAllPermissionsGranted()) {
+                binding.permissionRequiredOverlay.isVisible = true
+            } else {
+
+                binding.permissionRequiredOverlay.isVisible = false
+                viewModel.start()
+            }
         }
 
-        override fun onPermissionDenied(p0: PermissionDeniedResponse?) {
-            binding.permissionRequiredOverlay.isVisible = true
-        }
-
-        override fun onPermissionRationaleShouldBeShown(p0: PermissionRequest?, token: PermissionToken) {
+        override fun onPermissionRationaleShouldBeShown(
+            p0: MutableList<PermissionRequest>?,
+            token: PermissionToken
+        ) {
             token.continuePermissionRequest()
         }
     }
@@ -129,8 +127,13 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
     }
 
     private fun checkPermissions() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            arrayOf(BLUETOOTH_SCAN, ACCESS_FINE_LOCATION, BLUETOOTH_CONNECT)
+        else
+            arrayOf(ACCESS_FINE_LOCATION)
+
         Dexter.withContext(requireContext())
-            .withPermission(ACCESS_FINE_LOCATION)
+            .withPermissions(*permissions)
             .withListener(permissionListener)
             .onSameThread()
             .check()
