@@ -2,7 +2,7 @@ package com.inhealion.generator.presentation.programs.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import com.inhealion.generator.data.repository.UserRepository
-import com.inhealion.generator.model.*
+import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.networking.LogoutManager
 import com.inhealion.generator.networking.api.model.Folder
@@ -11,7 +11,6 @@ import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
 import com.inhealion.generator.utils.ApiErrorStringProvider
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.lang.RuntimeException
 import java.util.concurrent.TimeUnit
 
 class FolderViewModel(
@@ -19,7 +18,7 @@ class FolderViewModel(
     private val generatorApiCoroutinesClient: GeneratorApiCoroutinesClient,
     private val apiErrorStringProvider: ApiErrorStringProvider,
     private val logoutManager: LogoutManager
-) : BaseViewModel<Pair<UserProfile, List<Folder>>>() {
+) : BaseViewModel<FolderViewModel.UserData>() {
 
     private var folders: List<Folder>? = null
 
@@ -29,19 +28,19 @@ class FolderViewModel(
         viewModelScope.launch {
             postState(State.InProgress())
 
-            val user = userRepository.get().valueOrNull() ?: run {
+            val userId = userRepository.get().valueOrNull()?.id ?: run {
                 //postState(State.Failure(stringResource(R.string.error_unknown)))
                 logoutManager.logout()
                 return@launch
             }
-            fetch(KEY_USER_PROFILE) { generatorApiCoroutinesClient.fetchUserProfile(user.id!!) }
+            fetch(KEY_USER_PROFILE) { generatorApiCoroutinesClient.fetchUserProfile(userId) }
                 .flatMapConcat { userProfile ->
-                    fetch(KEY_FOLDERS) { generatorApiCoroutinesClient.fetchFolders(userProfile.id) }
-                        .map { userProfile to it }
+                    fetch(KEY_FOLDERS) { generatorApiCoroutinesClient.fetchFolders(userId) }
+                        .map { UserData(userProfile, it) }
                 }
                 .catch { postState(State.Failure(apiErrorStringProvider.getErrorMessage(it), it)) }
                 .collect {
-                    folders = it.second
+                    folders = it.folders
                     postState(State.Success(it))
                 }
         }
@@ -60,6 +59,7 @@ class FolderViewModel(
     fun getFolder(id: String) = folders?.firstOrNull { it.id == id }
 
     data class CacheItem(val time: Long, val obj: Any)
+    data class UserData(val userProfile: UserProfile, val folders: List<Folder>)
 
     companion object {
         private val MAX_CACHE_TIME = TimeUnit.MINUTES.toMillis(30L)

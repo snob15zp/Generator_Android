@@ -3,14 +3,16 @@ package com.inhealion.generator.networking.internal
 import android.content.Context
 import com.inhealion.generator.networking.ApiError
 import com.inhealion.generator.networking.account.AccountStore
-import com.inhealion.generator.networking.adapter.DateJsonAdapter
 import com.inhealion.generator.networking.api.GeneratorService
 import com.inhealion.generator.networking.api.model.ErrorResponse
 import com.inhealion.service.BuildConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import okhttp3.*
+import okhttp3.Cache
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.HttpException
 import retrofit2.Retrofit
@@ -23,7 +25,8 @@ import java.util.*
 internal open class BaseGeneratorApiClient(
     context: Context,
     baseUrl: String,
-    private val accountStore: AccountStore
+    private val accountStore: AccountStore,
+    interceptors: List<Interceptor> = emptyList()
 ) {
     protected val service: GeneratorService
     private val moshi = Moshi.Builder()
@@ -39,7 +42,7 @@ internal open class BaseGeneratorApiClient(
             logging.setLevel(HttpLoggingInterceptor.Level.NONE)
         }
 
-        val client = OkHttpClient.Builder()
+        val clientBuilder = OkHttpClient.Builder()
             .cache(
                 Cache(
                     directory = File(context.cacheDir, "http_cache"),
@@ -48,7 +51,10 @@ internal open class BaseGeneratorApiClient(
             )
             .addInterceptor(AuthHeaderInterceptor())
             .addInterceptor(logging)
-            .build()
+
+        interceptors.forEach { clientBuilder.addInterceptor(it) }
+
+        val client = clientBuilder.build()
 
         service = Retrofit.Builder()
             .client(client)
@@ -70,7 +76,7 @@ internal open class BaseGeneratorApiClient(
     }
 
     private fun parseHttpException(error: HttpException): ApiError {
-        if (error.code() == 401) return ApiError.Unauthorized
+        if (listOf(401, 403).contains(error.code())) return ApiError.Unauthorized
 
         return error.response()?.errorBody()?.string()?.let {
             try {

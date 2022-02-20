@@ -42,7 +42,7 @@ class SerialPortBluetooth(
         if (!isOpened) {
             throw IOException("Port not opened")
         }
-        commandChannel.offer(
+        commandChannel.trySend(
             Command.Write(
                 mutableListOf<Byte>(0x1b, 0x00, 0x1b, 0x01).apply {
                     addAll(2, escapeBytes(bytes))

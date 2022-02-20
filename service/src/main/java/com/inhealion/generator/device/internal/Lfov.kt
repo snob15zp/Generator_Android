@@ -72,7 +72,11 @@ class Lfov(
     companion object {
         private const val LOG_ENABLED = true
 
-        fun truncatedFileName(fileName: String, maxFileNameSize: Int, withoutExtension: Boolean = false) =
+        fun truncatedFileName(
+            fileName: String,
+            maxFileNameSize: Int,
+            withoutExtension: Boolean = false
+        ) =
             File(fileName).run {
                 if (nameWithoutExtension.length > maxFileNameSize) {
                     val ext = extension.substring(1, 3)

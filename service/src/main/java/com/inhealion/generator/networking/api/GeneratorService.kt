@@ -9,8 +9,8 @@ interface GeneratorService {
     @POST("api/users/login")
     suspend fun login(@Field("login") login: String, @Field("password") password: String): User?
 
-    @GET("api/profiles/{id}/folders")
-    suspend fun fetchFolders(@Path("id") userProfileId: String): List<Folder>?
+    @GET("api/users/{id}/folders")
+    suspend fun fetchFolders(@Path("id") userId: String): List<Folder>?
 
     @GET("api/folders/{id}/programs")
     suspend fun fetchPrograms(@Path("id") folderId: String): List<Program>?

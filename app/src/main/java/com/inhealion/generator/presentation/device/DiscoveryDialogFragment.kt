@@ -47,7 +47,6 @@ class DiscoveryDialogFragment : FullscreenDialogFragment<DiscoveryFragmentBindin
             if (!report.areAllPermissionsGranted()) {
                 binding.permissionRequiredOverlay.isVisible = true
             } else {
-
                 binding.permissionRequiredOverlay.isVisible = false
                 viewModel.start()
             }

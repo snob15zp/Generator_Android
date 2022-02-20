@@ -4,14 +4,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import com.inhealion.generator.model.State
-import kotlinx.coroutines.channels.ConflatedBroadcastChannel
-import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 abstract class BaseViewModel<T : Any> : ViewModel() {
-    private val stateChannel = ConflatedBroadcastChannel<State<T>>()
+    private val stateChannel = MutableStateFlow<State<T>>(State.Idle)
+    val state: LiveData<State<T>> get() = stateChannel.asLiveData()
 
-    private val _state = stateChannel.asFlow()
-    val state: LiveData<State<T>> get() = _state.asLiveData()
-
-    protected fun postState(state: State<T>) = stateChannel.offer(state)
+    protected fun postState(state: State<T>) = stateChannel.tryEmit(state)
 }

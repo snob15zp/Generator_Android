@@ -8,20 +8,22 @@ import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.api.model.FirmwareVersion
 import com.inhealion.generator.networking.api.model.User
 import kotlinx.coroutines.flow.*
+import okhttp3.Interceptor
 import okhttp3.ResponseBody
 import retrofit2.HttpException
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
-import java.util.*
 import java.util.zip.ZipInputStream
 
 internal class GeneratorApiCoroutinesClientImpl(
     baseUrl: String,
     context: Context,
+    interceptors: List<Interceptor>,
     private val accountStore: AccountStore,
     private val logoutManager: LogoutManager
-) : BaseGeneratorApiClient(context, baseUrl, accountStore), GeneratorApiCoroutinesClient {
+) : BaseGeneratorApiClient(context, baseUrl, accountStore, interceptors),
+    GeneratorApiCoroutinesClient {
 
     private val downloadFolder = context.getDir("download", Context.MODE_PRIVATE)
 
@@ -29,9 +31,10 @@ internal class GeneratorApiCoroutinesClientImpl(
         service.login(login, password)?.also { accountStore.store(it) }
     }
 
-    override suspend fun fetchFolders(userProfileId: String) = sendRequest { service.fetchFolders(userProfileId) }
+    override suspend fun fetchFolders(userId: String) = sendRequest { service.fetchFolders(userId) }
 
-    override suspend fun fetchPrograms(folderId: String) = sendRequest { service.fetchPrograms(folderId) }
+    override suspend fun fetchPrograms(folderId: String) =
+        sendRequest { service.fetchPrograms(folderId) }
 
     override suspend fun downloadFolder(folderId: String) = flow {
         service.downloadFolder(folderId)
@@ -55,12 +58,14 @@ internal class GeneratorApiCoroutinesClientImpl(
         emit(Unit)
     }
 
-    override suspend fun fetchUserProfile(userId: String) = sendRequest { service.fetchUserProfile(userId) }
+    override suspend fun fetchUserProfile(userId: String) =
+        sendRequest { service.fetchUserProfile(userId) }
 
     override suspend fun getLatestFirmwareVersion(): Flow<FirmwareVersion> =
         sendRequest { service.getLatestFirmwareVersion() }
 
-    override suspend fun fetchFolder(folderId: String) = sendRequest { service.fetchFolder(folderId) }
+    override suspend fun fetchFolder(folderId: String) =
+        sendRequest { service.fetchFolder(folderId) }
 
     private fun extractFiles(responseBody: ResponseBody, name: String): String {
         val folder = File(downloadFolder, name)
@@ -78,7 +83,10 @@ internal class GeneratorApiCoroutinesClientImpl(
         return folder.absolutePath
     }
 
-    private suspend fun <T> sendRequest(refreshToken: Boolean = true, request: suspend () -> T?): Flow<T> {
+    private suspend fun <T> sendRequest(
+        refreshToken: Boolean = true,
+        request: suspend () -> T?
+    ): Flow<T> {
         return flow {
             try {
                 val response = request()

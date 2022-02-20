@@ -18,6 +18,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.single
+import kotlinx.coroutines.flow.zip
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 import java.io.File
@@ -132,6 +133,7 @@ class ImportManager(
                 is ImportAction.UpdateFirmware -> downloadFirmware(importAction.version)
             }
         } catch (e: Exception) {
+            Timber.e(e, "Could not to download files")
             val message = when (e) {
                 is ApiError -> apiErrorStringProvider.getErrorMessage(e)
                 else -> stringProvider.getString(R.string.download_folder_error)
@@ -145,7 +147,10 @@ class ImportManager(
         listener?.onStateChanged(state)
     }
 
-    private fun importMcuFirmware(importAction: ImportAction.UpdateFirmware, data: FileData): Boolean {
+    private fun importMcuFirmware(
+        importAction: ImportAction.UpdateFirmware,
+        data: FileData
+    ): Boolean {
         postState(ImportState.Connecting)
         val address = importAction.address
         connectionFactory.connect(address).let { localGenerator ->
@@ -202,7 +207,11 @@ class ImportManager(
         }
     }
 
-    private fun importMcuFirmwareData(generator: Generator, version: String, data: ByteArray): Boolean {
+    private fun importMcuFirmwareData(
+        generator: Generator,
+        version: String,
+        data: ByteArray
+    ): Boolean {
         val strData = String(data)
         val versionValues = "(\\d+)\\.(\\d+)\\.(\\d+)".toRegex().matchEntire(version)?.groupValues
 
@@ -215,7 +224,9 @@ class ImportManager(
         )
 
         "<chunk>(.*)</chunk>".toRegex().findAll(strData).forEach {
-            buffer.addAll(Generator.romBAPrepareMCUFirmware(Base64.decode(it.groupValues[1], Base64.DEFAULT)))
+            buffer.addAll(
+                Generator.romBAPrepareMCUFirmware(Base64.decode(it.groupValues[1], Base64.DEFAULT))
+            )
         }
 
         val totalSize = buffer.size
@@ -245,19 +256,19 @@ class ImportManager(
         return getFiles(path)
     }
 
-    private suspend fun downloadFolder(folderId: String): List<FileData> {
-        val folder = api.fetchFolder(folderId).single()
-        val path = api.downloadFolder(folderId).firstOrNull() ?: return emptyList()
-        val files = getFiles(path).sortedBy { it.name }
-        val playList = createPlaylist(files)
-        return files.mapIndexed { index, fileData ->
-            FileData(
-                "${index}.txt",
-                fileData.content,
-                folder.isEncrypted
-            )
-        } + playList
-    }
+    private suspend fun downloadFolder(folderId: String): List<FileData> =
+        api.fetchFolder(folderId).zip(api.downloadFolder(folderId)) { folder, path ->
+            val files = getFiles(path).sortedBy { it.name }
+            val playList = createPlaylist(files)
+            return@zip files.mapIndexed { index, fileData ->
+                FileData(
+                    "${index}.txt",
+                    fileData.content,
+                    true
+                )
+            } + playList
+        }.single()
+
 
     private fun createPlaylist(files: List<FileData>): FileData {
         val buffer = ByteArray(files.size * MAX_FILENAME_SIZE) { 0x20 }
@@ -295,7 +306,11 @@ class ImportManager(
     }
 }
 
-class FileData(val name: String, val content: ByteArray, val isEncrypted: Boolean)
+class FileData(
+    val name: String,
+    val content: ByteArray,
+    val isEncrypted: Boolean
+)
 
 enum class FileType(val extension: String, val fileName: String) {
     MCU("bf", "fw"),

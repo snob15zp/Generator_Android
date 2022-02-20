@@ -12,7 +12,7 @@ interface GeneratorApiClient {
 
     fun signIn(login: String, password: String, callback: ApiCallback<User>)
 
-    fun fetchFolders(userProfileId: String, callback: ApiCallback<List<Folder>>)
+    fun fetchFolders(userId: String, callback: ApiCallback<List<Folder>>)
 
     fun fetchPrograms(folderId: String, callback: ApiCallback<List<Program>>)
 

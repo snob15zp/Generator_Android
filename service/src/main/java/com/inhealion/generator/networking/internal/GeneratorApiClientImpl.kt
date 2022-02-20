@@ -25,8 +25,8 @@ internal class GeneratorApiClientImpl(
         }
     }
 
-    override fun fetchFolders(userProfileId: String, callback: ApiCallback<List<Folder>>) = sendRequest(callback) {
-        service.fetchFolders(userProfileId)
+    override fun fetchFolders(userId: String, callback: ApiCallback<List<Folder>>) = sendRequest(callback) {
+        service.fetchFolders(userId)
     }
 
     override fun fetchPrograms(folderId: String, callback: ApiCallback<List<Program>>) = sendRequest(callback) {

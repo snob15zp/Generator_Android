@@ -8,12 +8,12 @@ import com.inhealion.generator.data.repository.DeviceRepository
 import com.inhealion.generator.data.repository.VersionInfoRepository
 import com.inhealion.generator.device.DeviceConnectionFactory
 import com.inhealion.generator.device.model.BleDevice
-import com.inhealion.generator.lifecyle.ActionLiveData
 import com.inhealion.generator.model.State
 import com.inhealion.generator.networking.GeneratorApiCoroutinesClient
 import com.inhealion.generator.presentation.main.viewmodel.BaseViewModel
 import com.inhealion.generator.utils.StringProvider
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -25,7 +25,6 @@ class FirmwareViewModel(
     private val stringProvider: StringProvider,
 ) : BaseViewModel<VersionInfo>() {
 
-    val showDiscovery = ActionLiveData()
     var latestVersionName: String? = null
     var device: BleDevice? = null
         private set
@@ -35,7 +34,10 @@ class FirmwareViewModel(
 
         deviceRepository.get().valueOrNull()?.let { device = it }
             ?: run {
-                showDiscovery.sendAction()
+                postState(State.Failure(
+                    stringProvider.getString(R.string.error_device_not_connected),
+                    DeviceNotConnected
+                ))
                 return@launch
             }
 
@@ -80,6 +82,8 @@ class FirmwareViewModel(
     fun reset() {
         isFirmwareUpdated = false
     }
+
+    object DeviceNotConnected: Exception()
 
     companion object {
         private var isFirmwareUpdated = false

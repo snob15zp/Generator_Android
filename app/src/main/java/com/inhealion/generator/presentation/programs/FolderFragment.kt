@@ -34,7 +34,9 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initUi()
-        viewModel.state.observe(viewLifecycleOwner) { switchState(it) }
+        viewModel.state.observe(viewLifecycleOwner) {
+            switchState(it)
+        }
         viewModel.load()
     }
 
@@ -51,7 +53,7 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
         )
     }
 
-    private fun switchState(state: State<Pair<UserProfile, List<Folder>>>) = with(binding) {
+    private fun switchState(state: State<FolderViewModel.UserData>) = with(binding) {
         when (state) {
             State.Idle -> {
                 swipeRefreshLayout.isRefreshing = false
@@ -69,7 +71,7 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
                 loadingOverlay.root.isVisible = false
                 errorOverlay.root.isVisible = false
                 itemDivider.isVisible = true
-                bind(state.data.first, state.data.second)
+                bind(state.data)
             }
             is State.InProgress -> {
                 swipeRefreshLayout.isRefreshing = false
@@ -79,9 +81,9 @@ class FolderFragment : BaseFragment<FolderFragmentBinding>() {
         }
     }
 
-    private fun bind(userProfile: UserProfile, folders: List<Folder>) {
-        bindUserProfile(userProfile)
-        folderAdapter.submitList(folders.map {
+    private fun bind(userData: FolderViewModel.UserData) {
+        bindUserProfile(userData.userProfile)
+        folderAdapter.submitList(userData.folders.map {
             FolderUiModel(
                 it.id,
                 it.name,

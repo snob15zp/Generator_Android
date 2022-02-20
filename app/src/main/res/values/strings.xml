@@ -20,7 +20,7 @@
     <string name="programs_title">Programs</string>
     <string name="cancel">Cancel</string>
     <string name="discovery_title">Find devices</string>
-    <string name="location_permission_message">Location permission is needed to find nearby devices</string>
+    <string name="grant_permission_message">Please grant permissions to discover and connect to nearby devices</string>
     <string name="grant_access">Grant access</string>
     <string name="settings_device">Device</string>
     <string name="settings_device_not_connected">Not connected</string>
@@ -30,6 +30,7 @@
     <string name="error_dialog_title">Error</string>
     <string name="connection_error_title">Connection error.</string>
     <string name="connection_error_message">Unable to connect to the device %1$s</string>
+    <string name="error_device_not_connected">Connected device is not found</string>
     <string name="device_unknown">Unknown</string>
     <string name="action_connecting">Connecting…</string>
     <string name="action_download">Download…</string>

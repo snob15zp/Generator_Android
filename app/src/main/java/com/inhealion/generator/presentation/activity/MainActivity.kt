@@ -64,9 +64,10 @@ class MainActivity : BaseActivity() {
 
     private fun navigateToFolders() {
         (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).apply {
-            navController.graph = navController.navInflater.inflate(R.navigation.main_nav_graph).apply {
-                startDestination = R.id.folderFragment
-            }
+            navController.graph =
+                navController.navInflater.inflate(R.navigation.main_nav_graph).apply {
+                    setStartDestination(R.id.folderFragment)
+                }
         }
     }
 

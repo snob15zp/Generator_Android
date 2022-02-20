@@ -16,20 +16,39 @@ import com.intelligt.modbus.jlibmodbus.serial.SerialUtils
 import com.intelligt.modbus.jlibmodbus.utils.DataUtils
 import com.intelligt.modbus.jlibmodbus.utils.ModbusExceptionCode
 import com.juul.kable.characteristicOf
-import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.io.IOException
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Phaser
-import java.util.concurrent.Semaphore
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
+
+private val KEY = byteArrayOf(
+    0x3a.toByte(),
+    0xf5.toByte(),
+    0x4c.toByte(),
+    0x68.toByte(),
+    0xaa.toByte(),
+    0x0a.toByte(),
+    0x65.toByte(),
+    0xf2.toByte(),
+    0xb2.toByte(),
+    0x2f.toByte(),
+    0xd5.toByte(),
+    0x33.toByte(),
+    0x05.toByte(),
+    0xb9.toByte(),
+    0xad.toByte(),
+    0x96.toByte()
+)
+private val IV = ByteArray(16) { 0 }
+private const val CIPHER = "AES/CBC/NoPadding"
 
 class GenG070V1(address: String, context: Context) : Generator {
     override var ready: Boolean = false
@@ -91,7 +110,8 @@ class GenG070V1(address: String, context: Context) : Generator {
         repeat(3) {
             try {
                 log("read version $it")
-                val versionData = modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
+                val versionData =
+                    modbusMasterRTU.readInputRegisters(SERVER_ADDRESS, VERSION_REGISTER_ADDR, 3)
                 return "${versionData[0]}.${versionData[1]}.${versionData[2]}"
 
             } catch (e: Exception) {
@@ -144,14 +164,15 @@ class GenG070V1(address: String, context: Context) : Generator {
         return try {
             modbusMasterRTU.setResponseTimeout(30000)
             log("write file $fileName, ${content.size}")
-            Lfov(fileName, content, MAX_FILENAME_SIZE, MAX_ITEM_SIZE, isEncrypted).forEach {
+            val data = if (isEncrypted) decryptFile(content) else content
+            Lfov(fileName, data, MAX_FILENAME_SIZE, MAX_ITEM_SIZE, false).forEach {
                 if (canceled.getAndSet(false)) {
                     log("canceled")
                     return ErrorCodes.CANCELED
                 }
                 log("---- write chunk ${it.size}")
                 runBlocking { writeChunk(it) }
-                _fileImportProgress.offer(
+                _fileImportProgress.trySend(
                     FileImport(fileName, it.size * 2 - it[0].shr(8).and(0xff) - 4 - 1)
                 )
             }
@@ -160,6 +181,15 @@ class GenG070V1(address: String, context: Context) : Generator {
             Timber.e(e, "Unable to send file $fileName")
             ErrorCodes.FATAL_ERROR
         }
+    }
+
+    private fun decryptFile(content: ByteArray): ByteArray {
+        val iv = IvParameterSpec(IV)
+        val keySpec = SecretKeySpec(KEY, "AES")
+        val cipher = Cipher.getInstance(CIPHER).apply {
+            init(Cipher.DECRYPT_MODE, keySpec, iv)
+        }
+        return cipher.doFinal(content)
     }
 
     override fun reboot(): Boolean {

@@ -1,29 +1,24 @@
 package com.inhealion.generator.event
 
-import kotlinx.coroutines.channels.ConflatedBroadcastChannel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 open class FlowEventDelegate<T> : EventDelegate<T> {
-    var channel: ConflatedBroadcastChannel<T>
+    var channel = MutableSharedFlow<T>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
 
-    constructor() {
-        channel = createChannel()
-    }
-
-    constructor(initialValue: T) : this() {
-        channel = createChannel(initialValue)
-    }
-
-    override fun observe() = channel.asFlow()
+    override fun observe() = channel.asSharedFlow()
 
     override suspend fun post(value: T) {
-        channel.send(value)
+        channel.emit(value)
     }
 
     override fun offer(value: T) {
-        channel.offer(value)
+        channel.tryEmit(value)
     }
 
     fun clear() {
@@ -31,16 +26,7 @@ open class FlowEventDelegate<T> : EventDelegate<T> {
     }
 
     private fun reinitialize() {
-        channel.close()
-        channel = createChannel()
-    }
-
-    private fun createChannel(initialValue: T? = null): ConflatedBroadcastChannel<T> {
-        return if (initialValue == null) {
-            ConflatedBroadcastChannel()
-        } else {
-            ConflatedBroadcastChannel(initialValue)
-        }
+        channel.resetReplayCache()
     }
 }
 

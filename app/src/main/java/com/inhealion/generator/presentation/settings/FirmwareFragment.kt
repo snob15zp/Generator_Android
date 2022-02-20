@@ -35,17 +35,19 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        with(viewModel) {
-            showDiscovery.observe(viewLifecycleOwner) {
-                DiscoveryDialogFragment.show(parentFragmentManager)
-                    .observe(CONNECT_REQUEST_KEY, viewLifecycleOwner, ::handleConnectionResult)
-            }
-            state.observe(viewLifecycleOwner, ::switchState)
-            load()
-        }
+        setupViewModel()
+        setupUi()
 
+        viewModel.load()
+    }
+
+    private fun setupUi() {
         binding.forceFlashButton.setOnClickListener { flash() }
         binding.updateButton.setOnClickListener { flash() }
+    }
+
+    private fun setupViewModel() {
+        viewModel.state.observe(viewLifecycleOwner, ::switchState)
     }
 
     override fun onResume() {
@@ -55,7 +57,11 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
 
     private fun flash() {
         val version = viewModel.latestVersionName ?: run {
-            Toast.makeText(requireContext(), getString(R.string.error_invalid_version), Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.error_invalid_version),
+                Toast.LENGTH_LONG
+            ).show()
             return
         }
         val action = ImportAction.UpdateFirmware(version, viewModel.device!!.address)
@@ -92,8 +98,9 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
                 deviceVersionValueTextView.text = getString(R.string.settings_device_not_connected)
             }
             is State.InProgress -> Unit
-            is State.Failure -> {
-                MessageDialog.show(
+            is State.Failure -> when (state.exception) {
+                is FirmwareViewModel.DeviceNotConnected -> showDiscoveryDialog()
+                else -> MessageDialog.show(
                     parentFragmentManager,
                     MessageDialogData(getString(R.string.error_dialog_title), state.error)
                 )
@@ -104,14 +111,25 @@ class FirmwareFragment : BaseFragment<FirmwareFragmentBinding>() {
                     ?: getString(R.string.settings_device_not_connected)
                 lastUpdateDateTextView.text = getString(
                     R.string.last_updated_at,
-                    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(state.data.lastCheckAt)
+                    SimpleDateFormat(
+                        "yyyy-MM-dd HH:mm:ss",
+                        Locale.getDefault()
+                    ).format(state.data.lastCheckAt)
                 )
 
-                noUpdateTextView.isVisible = !state.data.isUpdateRequired && state.data.deviceVersion != null
-                updateButton.isVisible = state.data.isUpdateRequired && state.data.deviceVersion != null
-                forceFlashButton.isVisible = !state.data.isUpdateRequired && state.data.deviceVersion != null
+                noUpdateTextView.isVisible =
+                    !state.data.isUpdateRequired && state.data.deviceVersion != null
+                updateButton.isVisible =
+                    state.data.isUpdateRequired && state.data.deviceVersion != null
+                forceFlashButton.isVisible =
+                    !state.data.isUpdateRequired && state.data.deviceVersion != null
             }
         }
+    }
+
+    private fun showDiscoveryDialog() {
+        DiscoveryDialogFragment.show(parentFragmentManager)
+            .observe(CONNECT_REQUEST_KEY, viewLifecycleOwner, ::handleConnectionResult)
     }
 
     private fun handleConnectionResult(result: Bundle) {
