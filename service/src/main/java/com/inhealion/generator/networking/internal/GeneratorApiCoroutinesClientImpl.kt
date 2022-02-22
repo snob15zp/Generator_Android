@@ -7,6 +7,8 @@ import com.inhealion.generator.networking.LogoutManager
 import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.api.model.FirmwareVersion
 import com.inhealion.generator.networking.api.model.User
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import okhttp3.Interceptor
 import okhttp3.ResponseBody
@@ -75,8 +77,14 @@ internal class GeneratorApiCoroutinesClientImpl(
         ZipInputStream(responseBody.byteStream()).use { zipInputStream ->
             var entry = zipInputStream.nextEntry
             while (entry != null) {
-                FileOutputStream(File(folder, entry.name)).use { zipInputStream.copyTo(it) }
-                zipInputStream.closeEntry()
+                val file = File(folder, entry.name)
+                val canonicalPath = file.canonicalPath
+                if (canonicalPath.startsWith(folder.canonicalPath)) {
+                    FileOutputStream(File(folder, entry.name)).use { zipInputStream.copyTo(it) }
+                    zipInputStream.closeEntry()
+                } else {
+                    throw SecurityException("Bad file path: $canonicalPath")
+                }
                 entry = zipInputStream.nextEntry
             }
         }
@@ -86,24 +94,26 @@ internal class GeneratorApiCoroutinesClientImpl(
     private suspend fun <T> sendRequest(
         refreshToken: Boolean = true,
         request: suspend () -> T?
-    ): Flow<T> {
-        return flow {
-            try {
-                val response = request()
-                response?.let { emit(it) } ?: throw ApiError.ServerError(404, "Resource not found")
-            } catch (e: Exception) {
-                Timber.e(e, "Send request failed")
-                if (e.isAuthError() && refreshToken) {
-                    if (refreshToken()) {
-                        return@flow emitAll(sendRequest(false, request))
-                    } else {
-                        logoutManager.logout()
-                    }
+    ): Flow<T> = flow {
+        try {
+            val response = request()
+            response?.let { emit(it) } ?: throw ApiError.ServerError(
+                404,
+                "Resource not found"
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Send request failed")
+            if (e.isAuthError() && refreshToken) {
+                if (refreshToken()) {
+                    return@flow emitAll(sendRequest(false, request))
+                } else {
+                    logoutManager.logout()
                 }
-                throw handleError(e)
             }
+            throw handleError(e)
         }
-    }
+    }.flowOn(Dispatchers.IO)
+
 
     private suspend fun refreshToken(): Boolean =
         try {
