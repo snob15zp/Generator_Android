@@ -8,7 +8,6 @@ import com.inhealion.generator.networking.account.AccountStore
 import com.inhealion.generator.networking.api.model.FirmwareVersion
 import com.inhealion.generator.networking.api.model.User
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import okhttp3.Interceptor
 import okhttp3.ResponseBody
@@ -87,6 +86,7 @@ internal class GeneratorApiCoroutinesClientImpl(
                 }
                 entry = zipInputStream.nextEntry
             }
+
         }
         return folder.absolutePath
     }
@@ -97,10 +97,7 @@ internal class GeneratorApiCoroutinesClientImpl(
     ): Flow<T> = flow {
         try {
             val response = request()
-            response?.let { emit(it) } ?: throw ApiError.ServerError(
-                404,
-                "Resource not found"
-            )
+            response?.let { emit(it) } ?: throw ApiError.ServerError(404, "Resource not found")
         } catch (e: Exception) {
             Timber.e(e, "Send request failed")
             if (e.isAuthError() && refreshToken) {
